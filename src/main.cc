@@ -5,12 +5,14 @@
 
 using namespace std;
 
+static const string VERSION = "0.0.1";
+
 void finish() {
   gflags::ShutDownCommandLineFlags();
 }
 
 int main(int argc, char *argv[]) {
-  gflags::SetVersionString("0.0.1");
+  gflags::SetVersionString(VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   LOG(INFO) << "lol, sup";
