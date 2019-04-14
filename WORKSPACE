@@ -22,3 +22,15 @@ git_repository(
     remote = "https://github.com/google/googletest",
     tag = "release-1.8.1",
 )
+
+# RPC lib.
+git_repository(
+    name = "grpc",
+    remote = "git@github.com:grpc/grpc.git",
+    tag = "v1.19.1",
+)
+git_repository(
+  name = "com_google_protobuf",
+  remote = "https://github.com/google/protobuf.git",
+  tag = "v3.6.1",
+)
