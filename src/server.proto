@@ -2,11 +2,8 @@ syntax = "proto3";
 
 package server;
 
-service DioDBServer {
-  rpc GetDBInfo() returns (DBInfo) {}
-  rpc HolyDiver() returns (HolyDiverLyrics) {}
+message DBInfoRequest {
 }
-
 message DBInfo {
   // The current version of DioDB running.
   string db_version = 1;
@@ -18,6 +15,13 @@ message DBInfo {
   int64 num_bytes = 3;
 }
 
+message HolyDiverRequest {
+}
 message HolyDiverLyrics {
   string lyrics = 1;
+}
+
+service DioDBServer {
+  rpc GetDBInfo(DBInfoRequest) returns (DBInfo) {}
+  rpc HolyDiver(HolyDiverRequest) returns (HolyDiverLyrics) {}
 }

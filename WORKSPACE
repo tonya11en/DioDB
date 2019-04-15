@@ -25,12 +25,14 @@ git_repository(
 
 # RPC lib.
 git_repository(
-    name = "grpc",
+    name = "com_github_grpc_grpc",
     remote = "git@github.com:grpc/grpc.git",
     tag = "v1.19.1",
 )
 git_repository(
   name = "com_google_protobuf",
   remote = "https://github.com/google/protobuf.git",
-  tag = "v3.6.1",
+  tag = "v3.6.1.2",
 )
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", com_github_grpc_grpc_bazel_grpc_deps = "grpc_deps")
+com_github_grpc_grpc_bazel_grpc_deps()
