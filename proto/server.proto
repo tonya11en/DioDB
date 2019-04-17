@@ -17,11 +17,11 @@ message DBInfo {
 
 message HolyDiverRequest {
 }
-message HolyDiverLyrics {
+message HolyDiverReply {
   string lyrics = 1;
 }
 
 service DioDBServerService {
   rpc GetDBInfo(DBInfoRequest) returns (DBInfo) {}
-  rpc HolyDiver(HolyDiverRequest) returns (HolyDiverLyrics) {}
+  rpc HolyDiver(HolyDiverRequest) returns (HolyDiverReply) {}
 }

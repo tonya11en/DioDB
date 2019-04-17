@@ -10,7 +10,7 @@ namespace Server {
 
 Status DioDBServer::HolyDiver(ServerContext *context,
                               const HolyDiverRequest *request,
-                              HolyDiverLyrics *lyrics) {
+                              HolyDiverReply *lyrics) {
   static const string holy_diver =
     "Mmmmhhh mhmm\n"
     "Yeah yeah\n"
@@ -60,6 +60,7 @@ Status DioDBServer::HolyDiver(ServerContext *context,
     "Holy diver\n"
     "Oh holy diver, mmm";
 
+  LOG(INFO) << "Ride the tiger";
   lyrics->set_lyrics(holy_diver);
   return Status::OK;
 }

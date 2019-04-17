@@ -6,7 +6,7 @@
 #include "proto/server.grpc.pb.h"
 
 using diodbserver::DioDBServerService;
-using diodbserver::HolyDiverLyrics;
+using diodbserver::HolyDiverReply;
 using diodbserver::HolyDiverRequest;
 using grpc::ServerContext;
 using grpc::Status;
@@ -19,7 +19,7 @@ public:
   // Get the lyrics to Dio's Holy Diver.
   Status HolyDiver(ServerContext *context,
                    const HolyDiverRequest *request,
-                   HolyDiverLyrics *lyrics);
+                   HolyDiverReply *lyrics);
 };
 
 } // Server
