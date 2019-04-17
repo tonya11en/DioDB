@@ -5,6 +5,7 @@ cc_binary(
       "@glog//:glog",
       "@com_github_gflags_gflags//:gflags",
       "@com_github_grpc_grpc//:grpc++",
+      ":diodb_server",
     ],
 )
 
@@ -15,11 +16,7 @@ cc_library(
     deps = [
       "@glog//:glog",
       "@com_github_gflags_gflags//:gflags",
+      "//proto:cc_server_grpc",
       "@com_github_grpc_grpc//:grpc++",
     ],
-)
-
-proto_library(
-  name = "server_proto",
-  srcs = ["server.proto"],
 )

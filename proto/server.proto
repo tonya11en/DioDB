@@ -1,13 +1,6 @@
 syntax = "proto3";
 
-option cc_generic_services = false;
-
 package diodbserver;
-
-service DioDBServerService {
-  rpc GetDBInfo(DBInfoRequest) returns (DBInfo) {}
-  rpc HolyDiver(HolyDiverRequest) returns (HolyDiverLyrics) {}
-}
 
 message DBInfoRequest {
 }
@@ -26,4 +19,9 @@ message HolyDiverRequest {
 }
 message HolyDiverLyrics {
   string lyrics = 1;
+}
+
+service DioDBServerService {
+  rpc GetDBInfo(DBInfoRequest) returns (DBInfo) {}
+  rpc HolyDiver(HolyDiverRequest) returns (HolyDiverLyrics) {}
 }
