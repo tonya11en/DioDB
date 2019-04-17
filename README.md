@@ -1,4 +1,16 @@
 DioDB: A persistent key-value store that's like... ok
 -----------------------------------------------------
-DioDB aims to be a persistent key-value store that doesn't really accel at
-anything. It's just a wonderful excuse to learn about building these things.
+I just want to learn about building [LSM](https://en.wikipedia.org/wiki/Log-structured_merge-tree)-based key-value stores, [gRPC](https://grpc.io/), and [SPDK](https://spdk.io/). The project is called DioDB because I was listening to Holy Diver by Dio when I started it.
+
+### Requirements
+To build this, you'll want to have a modern version of [Bazel](https://docs.bazel.build/versions/master/install.html) running on some flavor of Linux.
+
+### Building
+To build the DioDB server binary, run:
+```
+bazel build //src:diodb
+```
+The binary should then show up in your generated `bazel-bin/src` directory.
+
+### Using DioDB
+There are only silly testing endpoints implemented right now, so I'll probably make an `example` directory with a client that exercises the database as it's implemented. So... **TODO**.
