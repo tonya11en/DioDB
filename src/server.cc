@@ -7,6 +7,12 @@ using namespace std;
 
 namespace DioDB {
 namespace Server {
+Status DioDBServer::GetDBInfo(ServerContext *context,
+                              const DBInfoRequest *request,
+                              DBInfoReply *reply) {
+  reply->set_db_version(gflags::VersionString());
+  return Status::OK;
+}
 
 Status DioDBServer::HolyDiver(ServerContext *context,
                               const HolyDiverRequest *request,
