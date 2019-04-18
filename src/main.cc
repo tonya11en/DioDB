@@ -16,10 +16,8 @@ using DioDB::Server::DioDBServer;
 
 DEFINE_string(server_port, "6666", "The port that the DioDB server listens on");
 
-static const string VERSION = "0.0.1";
-
 void initialize(int argc, char *argv[]) {
-  gflags::SetVersionString(VERSION);
+  gflags::SetVersionString("0.0");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_log_dir.empty()) {

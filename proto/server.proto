@@ -4,7 +4,7 @@ package diodbserver;
 
 message DBInfoRequest {
 }
-message DBInfo {
+message DBInfoReply {
   // The current version of DioDB running.
   string db_version = 1;
 
@@ -22,6 +22,6 @@ message HolyDiverReply {
 }
 
 service DioDBServerService {
-  rpc GetDBInfo(DBInfoRequest) returns (DBInfo) {}
+  rpc GetDBInfo(DBInfoRequest) returns (DBInfoReply) {}
   rpc HolyDiver(HolyDiverRequest) returns (HolyDiverReply) {}
 }
