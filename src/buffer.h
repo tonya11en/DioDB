@@ -9,4 +9,4 @@ namespace DioDB {
 // have a better handle on this.
 typedef std::string Buffer;
 
-} // namespace DioDB
+}  // namespace DioDB

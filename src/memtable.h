@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 
 #include "buffer.h"
 
 namespace DioDB {
 
 class Memtable {
-public:
+ public:
   Memtable() {}
   ~Memtable() {}
 
@@ -28,16 +28,14 @@ public:
   void Erase(const Buffer& key);
 
   // Return the number of key/value pairs stored in the memtable.
-  size_t Size() const {
-    return kv_map_.size();
-  }
+  size_t Size() const { return kv_map_.size(); }
 
   // TODO: stats such as num_bytes..
 
-private:
+ private:
   // Sorted structure for key/value mappings.
   // TODO: Use some abseil map.
   std::map<Buffer, Buffer> kv_map_;
 };
 
-} // namespace DioDB
+}  // namespace DioDB

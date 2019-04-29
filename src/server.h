@@ -19,17 +19,15 @@ namespace DioDB {
 namespace Server {
 
 class DioDBServer : public DioDBServerService::Service {
-public:
+ public:
   // Get information about this DioDB server.
-  Status GetDBInfo(ServerContext *context,
-                   const DBInfoRequest *request,
+  Status GetDBInfo(ServerContext *context, const DBInfoRequest *request,
                    DBInfoReply *reply);
 
   // Get the lyrics to Dio's Holy Diver.
-  Status HolyDiver(ServerContext *context,
-                   const HolyDiverRequest *request,
+  Status HolyDiver(ServerContext *context, const HolyDiverRequest *request,
                    HolyDiverReply *lyrics);
 };
 
-} // namespace Server
-} // namespace DioDB
+}  // namespace Server
+}  // namespace DioDB

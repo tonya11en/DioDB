@@ -29,8 +29,6 @@ Buffer Memtable::Get(const Buffer key) const {
   return kv_map_.at(key);
 }
 
-void Memtable::Erase(const Buffer& key) {
-  kv_map_.erase(key);
-}
+void Memtable::Erase(const Buffer& key) { kv_map_.erase(key); }
 
-} // namespace DioDB
+}  // namespace DioDB
