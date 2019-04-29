@@ -14,6 +14,9 @@ using namespace std;
 
 using DioDB::Server::DioDBServer;
 
+DEFINE_string(
+    root_dir, "/tmp/",
+    "The location of the root directory containing all of the database files");
 DEFINE_string(server_port, "6666", "The port that the DioDB server listens on");
 
 void initialize(int argc, char *argv[]) {

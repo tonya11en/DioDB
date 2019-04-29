@@ -14,3 +14,13 @@ cc_test(
     "//src:memtable_lib",
   ],
 )
+
+cc_test(
+  name = "SSTableTest",
+  srcs = ["sstable_test.cc"],
+  deps = [
+    "@googletest//:gtest_main",
+    "//src:sstable_lib",
+  ],
+  copts = ["--std=c++17"],
+)

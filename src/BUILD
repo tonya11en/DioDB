@@ -37,3 +37,13 @@ cc_library(
   ],
   visibility = ["//test:__pkg__"],
 )
+
+cc_library(
+  name = "sstable_lib",
+#  srcs = ["sstable.cc"],
+  hdrs = ["sstable.h"],
+  deps = [
+    "@glog//:glog",
+  ],
+  visibility = ["//test:__pkg__"],
+)
