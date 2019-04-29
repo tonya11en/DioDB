@@ -4,9 +4,9 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <grpc/grpc.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <grpcpp/security/server_credentials.h>
 
 #include "src/server.h"
 
