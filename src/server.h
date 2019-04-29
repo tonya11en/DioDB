@@ -1,3 +1,5 @@
+#pragma once
+
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -29,5 +31,5 @@ public:
                    HolyDiverReply *lyrics);
 };
 
-} // Server
-} // DioDB
+} // namespace Server
+} // namespace DioDB
