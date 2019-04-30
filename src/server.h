@@ -15,7 +15,7 @@ using diodbserver::HolyDiverRequest;
 using grpc::ServerContext;
 using grpc::Status;
 
-namespace DioDB {
+namespace diodb {
 namespace Server {
 
 class DioDBServer : public DioDBServerService::Service {
@@ -30,4 +30,4 @@ class DioDBServer : public DioDBServerService::Service {
 };
 
 }  // namespace Server
-}  // namespace DioDB
+}  // namespace diodb

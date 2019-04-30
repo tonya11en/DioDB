@@ -5,7 +5,7 @@
 
 #include "buffer.h"
 
-namespace DioDB {
+namespace diodb {
 
 class Memtable {
  public:
@@ -38,4 +38,4 @@ class Memtable {
   std::map<Buffer, Buffer> kv_map_;
 };
 
-}  // namespace DioDB
+}  // namespace diodb

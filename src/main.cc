@@ -12,7 +12,7 @@
 
 using namespace std;
 
-using DioDB::Server::DioDBServer;
+using diodb::Server::DioDBServer;
 
 DEFINE_string(
     root_dir, "/tmp/",

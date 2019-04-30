@@ -4,7 +4,7 @@
 
 #include "memtable.h"
 
-namespace DioDB {
+namespace diodb {
 
 void Memtable::Flush(const std::string& filename) {
   // TODO
@@ -31,4 +31,4 @@ Buffer Memtable::Get(const Buffer key) const {
 
 void Memtable::Erase(const Buffer& key) { kv_map_.erase(key); }
 
-}  // namespace DioDB
+}  // namespace diodb

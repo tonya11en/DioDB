@@ -2,9 +2,12 @@
 
 #include "src/memtable.h"
 
+namespace diodb {
+namespace test {
+
 class MemtableTest : public ::testing::Test {
  protected:
-  DioDB::Memtable memtable_;
+  Memtable memtable_;
 };
 
 TEST_F(MemtableTest, TestKeyExistsBasic) {
@@ -40,3 +43,6 @@ TEST_F(MemtableTest, TestSize) {
   memtable_.Erase("key1");
   EXPECT_EQ(0, memtable_.Size());
 }
+
+} // namespace test
+} // namespace diodb

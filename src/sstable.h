@@ -2,10 +2,9 @@
 
 #include <string>
 
-#include "buffer.h"
 #include "memtable.h"
 
-namespace DioDB {
+namespace diodb {
 
 class SSTable {
  public:
@@ -29,8 +28,6 @@ class SSTable {
   // TODO: stats such as num_bytes..
 
  private:
-   // Information about the database.
-   DBContext db_context_;
 };
 
-}  // namespace DioDB
+}  // namespace diodb

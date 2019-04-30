@@ -44,6 +44,7 @@ cc_library(
   hdrs = ["sstable.h"],
   deps = [
     "@glog//:glog",
+    ":memtable_lib",
   ],
   visibility = ["//test:__pkg__"],
 )

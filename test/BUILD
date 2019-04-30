@@ -3,7 +3,7 @@ cc_test(
   srcs = ["noop_test.cc"],
   deps = [
     "@googletest//:gtest_main",
-  ]
+  ],
 )
 
 cc_test(
@@ -21,6 +21,8 @@ cc_test(
   deps = [
     "@googletest//:gtest_main",
     "//src:sstable_lib",
+    "@boost//:filesystem",
+    "@glog//:glog",
+    "//test/util:test_util_lib",
   ],
-  copts = ["--std=c++17"],
 )

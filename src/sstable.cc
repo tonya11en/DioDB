@@ -1,6 +1,6 @@
 #include <experimental/filesystem>
 
-namespace DioDB {
+namespace diodb {
 
 using fs = std::experimental::filesystem;
 
@@ -17,4 +17,4 @@ SSTable::SSTable(const std::string filename,
 
 }
 
-} // namespace DioDB
+} // namespace diodb

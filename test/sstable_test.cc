@@ -1,24 +1,27 @@
-#include <filesystem>
-
+#include <boost/filesystem.hpp>
 #include "gtest/gtest.h"
+#include <glog/logging.h>
 
-#include "src/memtable.h"
+#include "src/sstable.h"
+#include "test/util/filesystem_utils.h"
 
-using fs = std::filesystem;
+using diodb::test::util::ScopedTempDirectory;
+namespace fs = boost::filesystem;
+
+namespace diodb {
+namespace test {
 
 class SSTableTest : public ::testing::Test {
+  public:
+   SSTableTest() : tmp_dir_(ScopedTempDirectory()) {}
+
   protected:
-    void SetUp() override {
-      tmp_dir_ = fs::temp_directory_path();
-    }
-
-    void TearDown() override {
-      fs::remove_all(tmp_dir_);
-    }
-
-    fs::path tmp_dir_;
+   ScopedTempDirectory tmp_dir_; 
 };
 
-TEST_F(SStableTest, ExistingFileTest) {
+TEST_F(SSTableTest, ExistingFileTest) {
   
 }
+
+} // namespace test
+} // namespace diodb
