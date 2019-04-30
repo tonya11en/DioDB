@@ -9,3 +9,9 @@ cc_grpc_library(
   generate_mocks = True,
   visibility = ["//visibility:public"],
 )
+
+proto_library(
+  name = "sstable_proto",
+  srcs = ["sstable.proto"],
+  visibility = ["//visibility:public"],
+)

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include <boost/filesystem.hpp>
 
+#include "buffer.h"
 #include "memtable.h"
 
 namespace fs = boost::filesystem;
@@ -31,6 +33,13 @@ class SSTable {
   // TODO: stats such as num_bytes..
 
  private:
+  // The minimum number of bytes between each segment referenced in the
+  // sparse index.
+  size_t index_offset_bytes_;
+
+  // A sparse index of the keys and offsets of the associated SSTable entries
+  // in the file.
+  std::unordered_map<Buffer, uint64_t> sparse_index_;
 };
 
 }  // namespace diodb
