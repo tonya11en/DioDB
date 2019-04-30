@@ -5,5 +5,5 @@ namespace test {
 
 TEST(NoopTest, Noop) {}
 
-} // namespace test
-} // namespace diodb
+}  // namespace test
+}  // namespace diodb

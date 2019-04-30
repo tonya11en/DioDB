@@ -44,5 +44,5 @@ TEST_F(MemtableTest, TestSize) {
   EXPECT_EQ(0, memtable_.Size());
 }
 
-} // namespace test
-} // namespace diodb
+}  // namespace test
+}  // namespace diodb

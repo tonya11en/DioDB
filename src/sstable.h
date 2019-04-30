@@ -17,8 +17,8 @@ class SSTable {
   SSTable(const fs::path sstable_path);
 
   // Constructing an SSTable using a filename and a memtable implies we are
-  // flushing the memtable to disk. The file indicated by 'new_sstable_path' MUST NOT
-  // exist, or DioDB will abort.
+  // flushing the memtable to disk. The file indicated by 'new_sstable_path'
+  // MUST NOT exist, or DioDB will abort.
   SSTable(const fs::path new_sstable_path, const Memtable memtable);
 
   // Constructing an SSTable from other SSTable objects will merge the provided
