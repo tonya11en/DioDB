@@ -40,11 +40,12 @@ cc_library(
 
 cc_library(
   name = "sstable_lib",
-#  srcs = ["sstable.cc"],
+  srcs = ["sstable.cc"],
   hdrs = ["sstable.h"],
   deps = [
     "@glog//:glog",
     ":memtable_lib",
+    "@boost//:filesystem",
   ],
   visibility = ["//test:__pkg__"],
 )

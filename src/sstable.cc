@@ -1,18 +1,20 @@
-#include <experimental/filesystem>
+#include <boost/filesystem.hpp>
+#include <glog/logging.h>
+
+#include "sstable.h"
 
 namespace diodb {
 
-using fs = std::experimental::filesystem;
-
-SSTable::SSTable(const std::string filename) {
-  CHECK(fs::exists(filename));
+SSTable::SSTable(const fs::path sstable_path) {
+  CHECK(fs::exists(sstable_path)) << "SSTable file " << sstable_path
+                                      << " does not exist";
 }
 
-SSTable::SSTable(const std::string filename, const Memtable memtable) {
+SSTable::SSTable(const fs::path new_sstable_path, const Memtable memtable) {
 
 }
 
-SSTable::SSTable(const std::string filename,
+SSTable::SSTable(const fs::path new_sstable_path,
                  const std::vector<SSTable> sstables) {
 
 }

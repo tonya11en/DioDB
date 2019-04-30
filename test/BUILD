@@ -23,6 +23,5 @@ cc_test(
     "//src:sstable_lib",
     "@boost//:filesystem",
     "@glog//:glog",
-    "//test/util:test_util_lib",
   ],
 )
