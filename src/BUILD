@@ -1,16 +1,16 @@
 cc_binary(
-  name = "diodb",
+  name = "diverdb",
   srcs = ["main.cc"],
   deps = [
     "@glog//:glog",
     "@com_github_gflags_gflags//:gflags",
     "@com_github_grpc_grpc//:grpc++",
-    ":diodb_server_lib",
+    ":diverdb_server_lib",
   ],
 )
 
 cc_library(
-  name = "diodb_server_lib",
+  name = "diverdb_server_lib",
   srcs = ["server.cc"],
   hdrs = ["server.h"],
   deps = [
@@ -34,6 +34,8 @@ cc_library(
   deps = [
     "@glog//:glog",
     ":buffer_lib",
+    "//proto:segment_proto",
+    ":stats_lib",
   ],
   visibility = ["//test:__pkg__"],
 )
@@ -46,6 +48,14 @@ cc_library(
     "@glog//:glog",
     ":memtable_lib",
     "@boost//:filesystem",
+    "@com_google_protobuf//:protobuf",
+    "//proto:segment_proto",
+    ":stats_lib",
   ],
   visibility = ["//test:__pkg__"],
+)
+
+cc_library(
+  name = "stats_lib",
+  hdrs = ["table_stats.h"],
 )

@@ -4,16 +4,15 @@
 #include <string>
 
 #include "buffer.h"
+#include "table_stats.h"
+#include "proto/segment.pb.h"
 
-namespace diodb {
+namespace diverdb {
 
-class Memtable {
+class Memtable : public TableStats {
  public:
-  Memtable() {}
+  Memtable() {};
   ~Memtable() {}
-
-  // Dumps the contents of the memtable onto disk as an immutable SSTable.
-  void Flush(const std::string& filename);
 
   // Returns true if the given key exists.
   bool KeyExists(const Buffer& key) const;
@@ -27,15 +26,25 @@ class Memtable {
   // Erases a key/value pair from the memtable.
   void Erase(const Buffer& key);
 
-  // Return the number of key/value pairs stored in the memtable.
-  size_t Size() const { return kv_map_.size(); }
-
-  // TODO: stats such as num_bytes..
+ private:
+  void InitializeStats();
 
  private:
   // Sorted structure for key/value mappings.
   // TODO: Use some abseil map.
-  std::map<Buffer, Buffer> kv_map_;
+  std::map<Buffer, Segment> segment_map_;
+
+ public:
+  // Iterator will just iterate over the internal map type.
+  using MapType = decltype(segment_map_);
+  using iterator = MapType::iterator;
+  using const_iterator = MapType::const_iterator;
+  inline iterator begin() { return segment_map_.begin(); }
+  inline iterator end() { return segment_map_.end(); }
+  inline const_iterator begin() const { return segment_map_.begin(); }
+  inline const_iterator end() const { return segment_map_.end(); }
+  inline const_iterator cbegin() const { return segment_map_.cbegin(); }
+  inline const_iterator cend() const { return segment_map_.cend(); }
 };
 
-}  // namespace diodb
+}  // namespace diverdb

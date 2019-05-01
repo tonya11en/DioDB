@@ -5,16 +5,16 @@
 
 using namespace std;
 
-namespace diodb {
+namespace diverdb {
 namespace Server {
-Status DioDBServer::GetDBInfo(ServerContext *context,
+Status DiverDBServer::GetDBInfo(ServerContext *context,
                               const DBInfoRequest *request,
                               DBInfoReply *reply) {
   reply->set_db_version(gflags::VersionString());
   return Status::OK;
 }
 
-Status DioDBServer::HolyDiver(ServerContext *context,
+Status DiverDBServer::HolyDiver(ServerContext *context,
                               const HolyDiverRequest *request,
                               HolyDiverReply *lyrics) {
   static const string holy_diver =
@@ -72,4 +72,4 @@ Status DioDBServer::HolyDiver(ServerContext *context,
 }
 
 }  // namespace Server
-}  // namespace diodb
+}  // namespace diverdb

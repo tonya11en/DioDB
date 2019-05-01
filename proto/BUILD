@@ -10,8 +10,11 @@ cc_grpc_library(
   visibility = ["//visibility:public"],
 )
 
-proto_library(
-  name = "sstable_proto",
-  srcs = ["sstable.proto"],
+cc_grpc_library(
+  name = "segment_proto",
+  deps = [],
+  srcs = ["segment.proto"],
+  proto_only = True,
+  well_known_protos = True,
   visibility = ["//visibility:public"],
 )

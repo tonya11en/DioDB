@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-namespace diodb {
+namespace diverdb {
 namespace test {
 
 TEST(NoopTest, Noop) {}
 
 }  // namespace test
-}  // namespace diodb
+}  // namespace diverdb
