@@ -17,7 +17,8 @@ using diverdb::Server::DiverDBServer;
 DEFINE_string(
     root_dir, "/tmp/",
     "The location of the root directory containing all of the database files");
-DEFINE_string(server_port, "6666", "The port that the DiverDB server listens on");
+DEFINE_string(server_port, "6666",
+              "The port that the DiverDB server listens on");
 
 void initialize(int argc, char *argv[]) {
   gflags::SetVersionString("0.0");

@@ -5,8 +5,8 @@
 #include <google/protobuf/util/delimited_message_util.h>
 #include <boost/filesystem.hpp>
 
-#include "sstable.h"
 #include "proto/segment.pb.h"
+#include "sstable.h"
 
 DEFINE_uint64(index_offset_bytes, 4096,
               "The minimum number of bytes between each segment that is "

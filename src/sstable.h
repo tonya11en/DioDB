@@ -29,7 +29,8 @@ class SSTable {
   // Constructing an SSTable from other SSTable objects will merge the provided
   // SSTables into a new object at the provided filename. The file indicated by
   // 'new_sstable_path' MUST NOT exist, or DiverDB will abort.
-  SSTable(const fs::path new_sstable_path, const std::vector<SSTablePtr>& sstables);
+  SSTable(const fs::path new_sstable_path,
+          const std::vector<SSTablePtr>& sstables);
 
   ~SSTable() {}
 

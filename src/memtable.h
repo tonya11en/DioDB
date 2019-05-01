@@ -4,14 +4,14 @@
 #include <string>
 
 #include "buffer.h"
-#include "table_stats.h"
 #include "proto/segment.pb.h"
+#include "table_stats.h"
 
 namespace diverdb {
 
 class Memtable : public TableStats {
  public:
-  Memtable() {};
+  Memtable(){};
   ~Memtable() {}
 
   // Returns true if the given key exists.

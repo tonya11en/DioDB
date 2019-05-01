@@ -8,15 +8,15 @@ using namespace std;
 namespace diverdb {
 namespace Server {
 Status DiverDBServer::GetDBInfo(ServerContext *context,
-                              const DBInfoRequest *request,
-                              DBInfoReply *reply) {
+                                const DBInfoRequest *request,
+                                DBInfoReply *reply) {
   reply->set_db_version(gflags::VersionString());
   return Status::OK;
 }
 
 Status DiverDBServer::HolyDiver(ServerContext *context,
-                              const HolyDiverRequest *request,
-                              HolyDiverReply *lyrics) {
+                                const HolyDiverRequest *request,
+                                HolyDiverReply *lyrics) {
   static const string holy_diver =
       "Mmmmhhh mhmm\n"
       "Yeah yeah\n"
