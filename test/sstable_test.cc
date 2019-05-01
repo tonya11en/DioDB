@@ -19,7 +19,7 @@ class SSTableTest : public ::testing::Test {
   fs::path TouchFile(const std::string& filename) {
     fs::path filepath = fs::current_path() / filename;
     std::ofstream ofs = std::ofstream(filepath.generic_string());
-    return filepath;    
+    return filepath;
   }
 };
 
