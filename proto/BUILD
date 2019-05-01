@@ -9,3 +9,12 @@ cc_grpc_library(
   generate_mocks = True,
   visibility = ["//visibility:public"],
 )
+
+cc_grpc_library(
+  name = "segment_proto",
+  deps = [],
+  srcs = ["segment.proto"],
+  proto_only = True,
+  well_known_protos = True,
+  visibility = ["//visibility:public"],
+)

@@ -7,20 +7,20 @@
 
 #include "proto/server.grpc.pb.h"
 
-using diodbserver::DBInfoReply;
-using diodbserver::DBInfoRequest;
-using diodbserver::DioDBServerService;
-using diodbserver::HolyDiverReply;
-using diodbserver::HolyDiverRequest;
+using diverdbserver::DBInfoReply;
+using diverdbserver::DBInfoRequest;
+using diverdbserver::DiverDBServerService;
+using diverdbserver::HolyDiverReply;
+using diverdbserver::HolyDiverRequest;
 using grpc::ServerContext;
 using grpc::Status;
 
-namespace DioDB {
+namespace diverdb {
 namespace Server {
 
-class DioDBServer : public DioDBServerService::Service {
+class DiverDBServer : public DiverDBServerService::Service {
  public:
-  // Get information about this DioDB server.
+  // Get information about this DiverDB server.
   Status GetDBInfo(ServerContext *context, const DBInfoRequest *request,
                    DBInfoReply *reply);
 
@@ -30,4 +30,4 @@ class DioDBServer : public DioDBServerService::Service {
 };
 
 }  // namespace Server
-}  // namespace DioDB
+}  // namespace diverdb

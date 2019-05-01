@@ -3,7 +3,7 @@ cc_test(
   srcs = ["noop_test.cc"],
   deps = [
     "@googletest//:gtest_main",
-  ]
+  ],
 )
 
 cc_test(
@@ -13,4 +13,18 @@ cc_test(
     "@googletest//:gtest_main",
     "//src:memtable_lib",
   ],
+)
+
+cc_test(
+  name = "SSTableTest",
+  srcs = ["sstable_test.cc"],
+  deps = [
+    "@googletest//:gtest_main",
+    "//src:sstable_lib",
+    "@boost//:filesystem",
+    "@glog//:glog",
+    "@com_google_protobuf//:protobuf",
+    "//proto:segment_proto",
+  ],
+  copts = ["--std=c++14"],
 )
