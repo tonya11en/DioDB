@@ -24,7 +24,7 @@ class SSTable {
   // Constructing an SSTable using a filename and a memtable implies we are
   // flushing the memtable to disk. The file indicated by 'new_sstable_path'
   // MUST NOT exist, or DiverDB will abort.
-  SSTable(const fs::path new_sstable_path, const Memtable& memtable);
+  SSTable(const fs::path& new_sstable_path, const Memtable& memtable);
 
   // Constructing an SSTable from other SSTable objects will merge the provided
   // SSTables into a new object at the provided filename. The file indicated by
@@ -34,14 +34,21 @@ class SSTable {
 
   ~SSTable() {}
 
+  // Accessors.
+  fs::path filepath() { return filepath_; }
+
   // TODO: stats such as num_bytes..
 
  private:
   // Persists an SSTable to disk from a provided memtable by appending segment
   // files to each other on disk. Returns true on success.
-  bool FlushMemtable(const fs::path new_sstable_path, const Memtable& memtable);
+  bool FlushMemtable(const fs::path& new_sstable_path,
+                     const Memtable& memtable);
 
  private:
+  // Filepath of this SSTable.
+  fs::path filepath_;
+
   // The minimum number of bytes between each segment referenced in the
   // sparse index.
   size_t index_offset_bytes_;

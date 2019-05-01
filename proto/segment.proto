@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package diverdb;
+
+message Segment {
+  // Key/value pair.
+  bytes key = 1;
+  bytes val = 2;
+
+  // Set to true if this entry is meant to indicate that the key has been
+  // deleted. If the entry is mean to be deleted, it will be carried along
+  // when merging SSTables until the bottom-level SStable.
+  bool delete_entry = 3;
+}

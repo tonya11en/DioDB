@@ -6,6 +6,8 @@
 
 namespace diverdb {
 
+Memtable::Memtable() : is_locked_(false) {}
+
 bool Memtable::KeyExists(const Buffer& key) const {
   if (segment_map_.count(key) > 0) {
     return !segment_map_.at(key).delete_entry();
@@ -14,6 +16,8 @@ bool Memtable::KeyExists(const Buffer& key) const {
 }
 
 void Memtable::Put(Buffer&& key, Buffer&& val) {
+  CHECK(!is_locked_);
+
   // TODO: Investigate protobuf arena.
   Segment segment;
   segment.set_key(key);
@@ -40,6 +44,8 @@ Buffer Memtable::Get(const Buffer key) const {
 }
 
 void Memtable::Erase(const Buffer& key) {
+  CHECK(!is_locked_);
+
   if (segment_map_.count(key) > 0 && !segment_map_[key].delete_entry()) {
     segment_map_[key].set_delete_entry(true);
     --mutable_num_valid_entries();

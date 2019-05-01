@@ -23,5 +23,8 @@ cc_test(
     "//src:sstable_lib",
     "@boost//:filesystem",
     "@glog//:glog",
+    "@com_google_protobuf//:protobuf",
+    "//proto:segment_proto",
   ],
+  copts = ["--std=c++14"],
 )

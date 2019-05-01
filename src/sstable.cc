@@ -18,25 +18,39 @@ using google::protobuf::util::SerializeDelimitedToOstream;
 namespace diverdb {
 
 SSTable::SSTable(const fs::path sstable_path)
-    : index_offset_bytes_(FLAGS_index_offset_bytes) {
+    : filepath_(sstable_path), index_offset_bytes_(FLAGS_index_offset_bytes) {
   CHECK(fs::exists(sstable_path))
       << "SSTable file " << sstable_path << " does not exist";
 }
 
-SSTable::SSTable(const fs::path new_sstable_path, const Memtable& memtable)
-    : index_offset_bytes_(FLAGS_index_offset_bytes) {
+SSTable::SSTable(const fs::path& new_sstable_path, const Memtable& memtable)
+    : filepath_(new_sstable_path),
+      index_offset_bytes_(FLAGS_index_offset_bytes) {
   CHECK(!fs::exists(new_sstable_path))
-      << "SSTable file " << new_sstable_path << " exists";
+      << "SSTable file " << filepath_ << " exists";
+  CHECK(memtable.is_locked())
+      << "Attempting to flush an unlocked memtable to " << new_sstable_path;
+
+  LOG(INFO) << "Flushing memtable into SSTable " << filepath_;
+  FlushMemtable(filepath_, memtable);
 }
 
 SSTable::SSTable(const fs::path new_sstable_path,
                  const std::vector<SSTablePtr>& sstables)
-    : index_offset_bytes_(FLAGS_index_offset_bytes) {
+    : filepath_(new_sstable_path),
+      index_offset_bytes_(FLAGS_index_offset_bytes) {
   CHECK(!fs::exists(new_sstable_path))
-      << "SSTable file " << new_sstable_path << " exists";
+      << "SSTable file " << filepath_ << " exists";
+
+  std::string parent_paths;
+  for (const auto& sst : sstables) {
+    parent_paths.append(sst->filepath().generic_string() + ", ");
+  }
+  LOG(INFO) << "Merging parent SSTables " << parent_paths << "into "
+            << filepath_;
 }
 
-bool SSTable::FlushMemtable(const fs::path new_sstable_path,
+bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
                             const Memtable& memtable) {
   // Relying on the ofstream destructor to close the fd.
   fs::ofstream ofs(new_sstable_path);

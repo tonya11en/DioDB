@@ -7,9 +7,7 @@ namespace test {
 
 class MemtableTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    memtable_ = Memtable();
-  }
+  void SetUp() override { memtable_ = Memtable(); }
   Memtable memtable_;
 };
 
@@ -26,6 +24,12 @@ TEST_F(MemtableTest, TestKeyExistsBasic) {
   EXPECT_TRUE(memtable_.KeyExists("testkey1"));
   memtable_.Put("testkey2", "testval2");
   EXPECT_TRUE(memtable_.KeyExists("testkey2"));
+}
+
+TEST_F(MemtableTest, TestMemtableLocking) {
+  memtable_.Put("testkey1", "testval1");
+  memtable_.Lock();
+  ASSERT_DEATH({ memtable_.Put("foo", "bar"); }, "is_locked");
 }
 
 TEST_F(MemtableTest, TestMemtableStats) {

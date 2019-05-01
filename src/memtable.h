@@ -11,7 +11,7 @@ namespace diverdb {
 
 class Memtable : public TableStats {
  public:
-  Memtable(){};
+  Memtable();
   ~Memtable() {}
 
   // Returns true if the given key exists.
@@ -26,6 +26,15 @@ class Memtable : public TableStats {
   // Erases a key/value pair from the memtable.
   void Erase(const Buffer& key);
 
+  // Returns the number of non-deleted key/value pairs in the memtable.
+  size_t Size() const { return num_valid_entries(); }
+
+  // Locks the memtable, rendering it immutable.
+  inline void Lock() { is_locked_ = true; }
+
+  // Accessors.
+  bool is_locked() const { return is_locked_; }
+
  private:
   void InitializeStats();
 
@@ -33,6 +42,10 @@ class Memtable : public TableStats {
   // Sorted structure for key/value mappings.
   // TODO: Use some abseil map.
   std::map<Buffer, Segment> segment_map_;
+
+  // If the memtable is locked, no further Put/Erase operations are allowed.
+  // This is asserted.
+  bool is_locked_;
 
  public:
   // Iterator will just iterate over the internal map type.
