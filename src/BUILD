@@ -1,16 +1,17 @@
 cc_binary(
-  name = "diverdb",
+  name = "diodb",
   srcs = ["main.cc"],
   deps = [
     "@glog//:glog",
     "@com_github_gflags_gflags//:gflags",
     "@com_github_grpc_grpc//:grpc++",
-    ":diverdb_server_lib",
+    ":diodb_server_lib",
   ],
+  copts = ["-std=c++17"],
 )
 
 cc_library(
-  name = "diverdb_server_lib",
+  name = "diodb_server_lib",
   srcs = ["server.cc"],
   hdrs = ["server.h"],
   deps = [
@@ -19,12 +20,14 @@ cc_library(
     "//proto:cc_server_grpc",
     "@com_github_grpc_grpc//:grpc++",
   ],
+  copts = ["-std=c++17"],
 )
 
 cc_library(
   name = "buffer_lib",
   hdrs = ["buffer.h"],
   deps = [],
+  copts = ["-std=c++17"],
 )
 
 cc_library(
@@ -34,10 +37,23 @@ cc_library(
   deps = [
     "@glog//:glog",
     ":buffer_lib",
-    "//proto:segment_proto",
-    ":stats_lib",
+    ":generic_table_lib",
   ],
   visibility = ["//test:__pkg__"],
+)
+
+cc_library(
+  name = "iohandle_lib",
+  srcs = ["iohandle.cc"],
+  hdrs = ["iohandle.h"],
+  deps = [
+    "@glog//:glog",
+    "@boost//:filesystem",
+    "@com_google_protobuf//:protobuf",
+    ":buffer_lib",
+  ],
+  copts = ["-std=c++17"],
+  visibility = ["//test:__pkg__", "//test/mocks:__pkg__"],
 )
 
 cc_library(
@@ -48,14 +64,16 @@ cc_library(
     "@glog//:glog",
     ":memtable_lib",
     "@boost//:filesystem",
+    ":iohandle_lib",
     "@com_google_protobuf//:protobuf",
-    "//proto:segment_proto",
-    ":stats_lib",
+    ":generic_table_lib",
   ],
-  visibility = ["//test:__pkg__"],
+  copts = ["-std=c++17"],
+  visibility = ["//test:__pkg__", "//test/mocks:__pkg__"],
 )
 
 cc_library(
-  name = "stats_lib",
-  hdrs = ["table_stats.h"],
+  name = "generic_table_lib",
+  hdrs = ["table_stats.h", "readable_table_base.h"],
+  copts = ["-std=c++17"],
 )

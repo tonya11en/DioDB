@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package diverdbserver;
+package diodbserver;
 
 message DBInfoRequest {
 }

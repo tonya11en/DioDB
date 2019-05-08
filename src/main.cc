@@ -12,7 +12,7 @@
 
 using namespace std;
 
-using diverdb::Server::DiverDBServer;
+using diodb::Server::DiverDBServer;
 
 DEFINE_string(
     root_dir, "/tmp/",
@@ -35,13 +35,13 @@ int main(int argc, char *argv[]) {
 
   const string server_address("0.0.0.0:" + FLAGS_server_port);
   LOG(INFO) << "DiverDB server will listen on " << server_address;
-  DiverDBServer diverdb_server;
+  DiverDBServer diodb_server;
 
   // Fire up the DiverDB server.
   LOG(INFO) << "initializing the service";
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(&diverdb_server);
+  builder.RegisterService(&diodb_server);
   unique_ptr<grpc::Server> server(builder.BuildAndStart());
   server->Wait();
 

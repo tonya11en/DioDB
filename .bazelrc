@@ -1,0 +1,3 @@
+build --strip never
+build --compilation_mode dbg
+build --copt "-Wall"

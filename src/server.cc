@@ -5,7 +5,7 @@
 
 using namespace std;
 
-namespace diverdb {
+namespace diodb {
 namespace Server {
 Status DiverDBServer::GetDBInfo(ServerContext *context,
                                 const DBInfoRequest *request,
@@ -72,4 +72,4 @@ Status DiverDBServer::HolyDiver(ServerContext *context,
 }
 
 }  // namespace Server
-}  // namespace diverdb
+}  // namespace diodb
