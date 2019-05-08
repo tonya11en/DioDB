@@ -8,7 +8,7 @@ To build this, you'll want to have a modern version of [Bazel](https://docs.baze
 ### Building
 To build the DiverDB server binary, run:
 ```
-bazel build //src:diverdb
+bazel build //src:diodb
 ```
 The binary should then show up in your generated `bazel-bin/src` directory.
 

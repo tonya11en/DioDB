@@ -1,4 +1,4 @@
-workspace(name = "diverdb")
+workspace(name = "diodb")
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
@@ -32,7 +32,7 @@ git_repository(
 git_repository(
   name = "com_google_protobuf",
   remote = "https://github.com/google/protobuf.git",
-  tag = "v3.6.1.2",
+  tag = "v3.7.1",
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")

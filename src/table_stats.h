@@ -1,4 +1,4 @@
-namespace diverdb {
+namespace diodb {
 
 class TableStats {
  public:
@@ -23,4 +23,4 @@ class TableStats {
   size_t num_delete_entries_;
 };
 
-}  // namespace diverdb
+}  // namespace diodb

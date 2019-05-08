@@ -4,6 +4,7 @@ cc_test(
   deps = [
     "@googletest//:gtest_main",
   ],
+  copts = ["-std=c++17"],
 )
 
 cc_test(
@@ -13,6 +14,7 @@ cc_test(
     "@googletest//:gtest_main",
     "//src:memtable_lib",
   ],
+  copts = ["-std=c++17"],
 )
 
 cc_test(
@@ -20,11 +22,10 @@ cc_test(
   srcs = ["sstable_test.cc"],
   deps = [
     "@googletest//:gtest_main",
-    "//src:sstable_lib",
+    "//test/mocks:sstable_mock_lib",
     "@boost//:filesystem",
     "@glog//:glog",
     "@com_google_protobuf//:protobuf",
-    "//proto:segment_proto",
   ],
-  copts = ["--std=c++14"],
+  copts = ["-std=c++17"],
 )

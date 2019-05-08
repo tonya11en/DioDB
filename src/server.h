@@ -7,15 +7,15 @@
 
 #include "proto/server.grpc.pb.h"
 
-using diverdbserver::DBInfoReply;
-using diverdbserver::DBInfoRequest;
-using diverdbserver::DiverDBServerService;
-using diverdbserver::HolyDiverReply;
-using diverdbserver::HolyDiverRequest;
+using diodbserver::DBInfoReply;
+using diodbserver::DBInfoRequest;
+using diodbserver::DiverDBServerService;
+using diodbserver::HolyDiverReply;
+using diodbserver::HolyDiverRequest;
 using grpc::ServerContext;
 using grpc::Status;
 
-namespace diverdb {
+namespace diodb {
 namespace Server {
 
 class DiverDBServer : public DiverDBServerService::Service {
@@ -30,4 +30,4 @@ class DiverDBServer : public DiverDBServerService::Service {
 };
 
 }  // namespace Server
-}  // namespace diverdb
+}  // namespace diodb
