@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <string>
 #include <map>
 #include <string>
 #include <utility>
@@ -13,6 +15,8 @@ namespace diodb {
 class Memtable : public TableStats, public ReadableTable {
  public:
   Memtable();
+  Memtable(std::vector<std::pair<std::string, std::string>> init_vec);
+
   ~Memtable() {}
 
   // ReadableTable.

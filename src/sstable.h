@@ -67,8 +67,9 @@ class SSTable : public TableStats, public ReadableTable {
   // Returns the minimum key offset bytes for the sparse index.
   virtual off_t KeyIndexOffsetBytes() const;
 
-  // Takes a vector of existing SSTable files and creates a new SSTable at
-  // 'filepath_' with the merged contents.
+  // Takes a vector of existing SSTable files that are sorted chronologically
+  // (newest to oldest) and creates a new SSTable at 'filepath_' with the merged
+  // contents. The merge keeps the most recent version of any segment.
   void MergeSSTables(const std::vector<SSTablePtr>& sstables);
 
   // Accessor.

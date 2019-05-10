@@ -93,60 +93,44 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
     return true;
   };
 
-  // A min heap containing the segment objects from the tip of each SST.
-  std::priority_queue<Segment, std::vector<Segment>, std::greater<Segment>> segment_heap;
+  // The segment cache maps the index of the parent SST to the last object read
+  // from it that was not yet written to disk. The parent SST vector index
+  // corresponds with the cache's index.
+  std::vector<std::shared_ptr<Segment>> segment_cache;
+  std::function<bool(const std::shared_ptr<Segment> s)> cache_empty =
+    [](const std::shared_ptr<Segment> p){ return p == nullptr;};
 
   // Perform the merge.
   //
   // TODO: This could be micro-optimized to avoid multiple evaluations, but
   //       right now the focus is on correctness.
-  bool completed_first_loop = false;
-  while (!all_handles_finished() && !segment_heap.empty()) {
+  while (!all_handles_finished() &&
+         !std::all_of(segment_cache.begin(), segment_cache.end(), cache_empty)) {
     // The index containing the segment whose key evaluates as the minimum.
     // Set to -1 to indicate whether a minimum has been selected yet for a loop.
+    int current_min_idx = 0;
     for (int idx = 0; idx < parent_sst_handles_.size(); ++idx) {
       IOHandle& h = parent_sst_handles_.at(idx);
-      if (h.End()) {
+      if (segment_cache[idx] == nullptr && h.End()) {
         continue;
       }
 
-      Segment segment;
-      // Returns true if segment parsed was inserted on the top of the heap.
-      auto parse_into_heap = [&h, &segment_heap](Segment *s) -> bool {
-        h.ParseNext(s);
-        const bool ret =
-          segment_heap.empty() || s->key < segment_heap.top().key;
-        segment_heap.push(*s);
-        return  ret;
-      };
-
-      parse_into_heap(&segment);
-
-      if (!completed_first_loop) {
-        continue;
+      // We're not at the end of the file, so read from disk and opulate the
+      // cache if it's empty. We only write to disk from the cache.
+      if (segment_cache[idx] == nullptr) {
+        auto segment = std::make_shared<Segment>();
+        h.ParseNext(segment.get());
+        segment_cache[idx] = std::move(segment);
       }
 
-      io_handle_->SegmentWrite(segment_heap.top());
-      segment_heap.pop();
-
-      if (h.End()) {
-        continue;
+      CHECK(segment_cache[current_min_idx]);
+      CHECK(segment_cache[idx]);
+      if (segment_cache[current_min_idx]->key > segment_cache[idx]->key) {
+        current_min_idx = idx;
       }
-
-      bool check_behind;
-      do {
-        // If we inserted a segment into the top of the heap (meaning it was the
-        // minimum value), we're going to pop it off below. The 'check_behind'
-        // variable indicates whether there could potentially be keys behind
-        // this one in the same SST that would be inserted into the top of the
-        // heap.  Therefore, it's worth continuing to check behind the recently
-        // parsed segment.
-        check_behind = parse_into_heap(&segment);
-        io_handle_->SegmentWrite(segment_heap.top());
-        segment_heap.pop();
-      } while (!h.End() && check_behind);
     }
-    completed_first_loop = true;
+    io_handle_->SegmentWrite(*segment_cache[current_min_idx]);
+    segment_cache[current_min_idx].reset();
   }
 
   file_size_ = fs::file_size(io_handle_->filepath());

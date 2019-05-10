@@ -179,5 +179,9 @@ TEST_F(SSTableTest, SSTableKeyExists) {
   ASSERT_TRUE(sstable.KeyExists("f"));
 }
 
+TEST_F(SSTableTest, SSTableMergeBasic) {
+  Memtable memtable;
+}
+
 }  // namespace test
 }  // namespace diodb
