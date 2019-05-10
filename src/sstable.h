@@ -51,7 +51,7 @@ class SSTable : public TableStats, public ReadableTable {
   virtual size_t Size() const override { return num_valid_entries(); }
 
   // Accessors.
-  fs::path filepath() { return filepath_; }
+  fs::path filepath() const { return filepath_; }
 
   // TODO: stats such as num_bytes..
 
@@ -66,6 +66,13 @@ class SSTable : public TableStats, public ReadableTable {
 
   // Returns the minimum key offset bytes for the sparse index.
   virtual off_t KeyIndexOffsetBytes() const;
+
+  // Takes a vector of existing SSTable files and creates a new SSTable at
+  // 'filepath_' with the merged contents.
+  void MergeSSTables(const std::vector<SSTablePtr>& sstables);
+
+  // Accessor.
+  int32_t file_size() { return file_size_; }
 
  private:
   // Filepath of this SSTable.

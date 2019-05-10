@@ -44,6 +44,8 @@ struct Segment {
            ", val=" + v + ", delete=" + std::to_string(delete_entry) + " }";
   }
 
+  bool operator>(Segment other) const { return key > other.key; }
+
   uint32_t key_size;
   uint32_t val_size;
   Buffer key;

@@ -28,8 +28,11 @@ class IOHandle {
   // Sync writes to disk.
   void Flush();
 
-  // True if at EOF.
-  bool Eof();
+  // True if current offset is at the end of the file.
+  bool End() const { return InputOffset() == fs::file_size(filepath_); };
+
+  // Accessors.
+  fs::path filepath() { return filepath_; }
 
  private:
   // The filepath being parsed.

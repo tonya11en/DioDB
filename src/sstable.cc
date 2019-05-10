@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <algorithm>
+#include <queue>
 #include <fstream>
 #include <memory>
 
@@ -75,6 +76,82 @@ SSTable::SSTable(const fs::path new_sstable_path,
   // file_size_ = fs::file_size(filepath_);
 }
 
+void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
+  // Build new IOHandles for the parent SSTs.
+  std::vector<IOHandle> parent_sst_handles_;
+  parent_sst_handles_.reserve(sstables.size());
+  for (const auto& sst : sstables) {
+    parent_sst_handles_.emplace_back(sst->filepath());
+  }
+
+  auto all_handles_finished = [&parent_sst_handles_]() -> bool {
+    for (const auto& h : parent_sst_handles_) {
+      if (!h.End()) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // A min heap containing the segment objects from the tip of each SST.
+  std::priority_queue<Segment, std::vector<Segment>, std::greater<Segment>> segment_heap;
+
+  // Perform the merge.
+  //
+  // TODO: This could be micro-optimized to avoid multiple evaluations, but
+  //       right now the focus is on correctness.
+  bool completed_first_loop = false;
+  while (!all_handles_finished() && !segment_heap.empty()) {
+    // The index containing the segment whose key evaluates as the minimum.
+    // Set to -1 to indicate whether a minimum has been selected yet for a loop.
+    for (int idx = 0; idx < parent_sst_handles_.size(); ++idx) {
+      IOHandle& h = parent_sst_handles_.at(idx);
+      if (h.End()) {
+        continue;
+      }
+
+      Segment segment;
+      // Returns true if segment parsed was inserted on the top of the heap.
+      auto parse_into_heap = [&h, &segment_heap](Segment *s) -> bool {
+        h.ParseNext(s);
+        const bool ret =
+          segment_heap.empty() || s->key < segment_heap.top().key;
+        segment_heap.push(*s);
+        return  ret;
+      };
+
+      parse_into_heap(&segment);
+
+      if (!completed_first_loop) {
+        continue;
+      }
+
+      io_handle_->SegmentWrite(segment_heap.top());
+      segment_heap.pop();
+
+      if (h.End()) {
+        continue;
+      }
+
+      bool check_behind;
+      do {
+        // If we inserted a segment into the top of the heap (meaning it was the
+        // minimum value), we're going to pop it off below. The 'check_behind'
+        // variable indicates whether there could potentially be keys behind
+        // this one in the same SST that would be inserted into the top of the
+        // heap.  Therefore, it's worth continuing to check behind the recently
+        // parsed segment.
+        check_behind = parse_into_heap(&segment);
+        io_handle_->SegmentWrite(segment_heap.top());
+        segment_heap.pop();
+      } while (!h.End() && check_behind);
+    }
+    completed_first_loop = true;
+  }
+
+  file_size_ = fs::file_size(io_handle_->filepath());
+}
+
 void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
   LOG(INFO) << "Building sparse index for SSTable " << table_id_;
 
@@ -85,7 +162,7 @@ void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
 
   off_t last_offset = 0;
   io_handle_->Reset();
-  while (io_handle_->InputOffset() < file_size_) {
+  while (!io_handle_->End()) {
     Segment segment;
     CHECK_LE(last_offset, io_handle_->InputOffset());
 
@@ -136,7 +213,7 @@ bool SSTable::KeyExists(const Buffer& key) const {
 
   io_handle_->Reset();
   Segment segment;
-  while (io_handle_->InputOffset() < file_size_) {
+  while (!io_handle_->End()) {
     io_handle_->ParseNext(&segment);
     if (key < segment.key) {
       return false;

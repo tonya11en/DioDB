@@ -35,7 +35,7 @@ IOHandle::~IOHandle() { fclose(fp_); }
 void IOHandle::Reset() { fseek(fp_, 0, SEEK_SET); }
 
 void IOHandle::ParseNext(Segment* segment) {
-  CHECK(!Eof());
+  CHECK(!End());
   CHECK(segment);
 
   auto validate_return = [](const size_t ret, const int expected_val) {
@@ -98,7 +98,5 @@ int IOHandle::InputOffset() const {
   PCHECK(pos >= 0) << "Failed to get offset";
   return pos;
 }
-
-bool IOHandle::Eof() { return feof(fp_) != 0; }
 
 }  // namespace diodb
