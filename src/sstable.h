@@ -85,6 +85,10 @@ class SSTable : public TableStats, public ReadableTable {
   // Sync writes to disk.
   void Flush();
 
+  // Finds a segment in the SSTable given a key and puts it in the provided
+  // segment reference. Returns true if one is found.
+  bool FindSegment(const Buffer& key, Segment& segment) const;
+
   // Accessor.
   int32_t file_size() { return file_size_; }
 

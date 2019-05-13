@@ -215,6 +215,11 @@ bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
 bool SSTable::KeyExists(const Buffer& key) const {
   // TODO: Bloom filter to speed this up. It's not really useful without it.
 
+  Segment segment;
+  return FindSegment(key, segment);
+}
+
+bool SSTable::FindSegment(const Buffer& key, Segment& segment) const {
   if (sparse_index_.empty() || key < sparse_index_.begin()->first) {
     return false;
   }
@@ -231,7 +236,6 @@ bool SSTable::KeyExists(const Buffer& key) const {
     it = std::prev(it);
   }
 
-  Segment segment;
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
     io_handle_->ParseNext(&segment);
@@ -248,8 +252,10 @@ bool SSTable::KeyExists(const Buffer& key) const {
 }
 
 Buffer SSTable::Get(const Buffer& key) const {
-  // TODO
-  return Buffer();
+  Segment segment;
+  const bool found = FindSegment(key, segment);
+
+  return found ? segment.val : Buffer();
 }
 
 off_t SSTable::KeyIndexOffsetBytes() const {

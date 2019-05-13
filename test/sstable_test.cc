@@ -34,6 +34,14 @@ class SSTableTest : public ::testing::Test {
     }
   }
 
+  std::string Vec2String(std::vector<char>& v) {
+    return std::string(v.begin(), v.end());
+  }
+
+  std::vector<char> String2Vec(std::string s) {
+    return std::vector<char>(s.begin(), s.end());
+  }
+
   // Returns a path to a touched file with a given filename, then cleans up
   // the file at the end of the test.
   fs::path TouchFile(const string& filename) {
@@ -255,14 +263,16 @@ TEST_F(SSTableTest, SSTableMergeBasicInterleave) {
   }
 }
 
-#if 0
 TEST_F(SSTableTest, SSTableMergeDuplicates) {
   using KVPair = pair<string, string>;
   vector<KVPair> kvs0, kvs1;
-  for (int ii = 0; ii < 100; ++ii) {
-    kvs0.emplace_back(std::to_string(ii), std::to_string(ii) + "-val");
-    kvs1.emplace_back(std::to_string(100 + ii), std::to_string(100 + ii) + "-val");
-  }
+  kvs0.emplace_back("0", "0-new");
+  kvs0.emplace_back("1", "1-new");
+  kvs0.emplace_back("3", "3-new");
+
+  kvs1.emplace_back("0", "0-old");
+  kvs1.emplace_back("2", "2-old");
+  kvs1.emplace_back("3", "3-old");
 
   vector<MockSSTable::SSTablePtr> ssts;
   auto filename = GetTempFilename("SSTableMergeBasicAdjacent-0");
@@ -273,10 +283,8 @@ TEST_F(SSTableTest, SSTableMergeDuplicates) {
   filename = GetTempFilename("SSTableMergeBasicAdjacent-merged");
   MockSSTable sstable(filename, ssts);
   CHECK(sstable.SanityCheck());
-  for (int ii = 0; ii < 200; ++ii) {
-    ASSERT_TRUE(sstable.KeyExists(std::to_string(ii))) << ii;
-  }
+  //TODO
 }
-#endif
+
 }  // namespace test
 }  // namespace diodb
