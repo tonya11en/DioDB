@@ -93,10 +93,14 @@ bool IOHandle::SegmentWrite(const Segment& segment) {
 
 void IOHandle::Flush() { PCHECK(fflush(fp_) == 0) << "error flushing"; }
 
-int IOHandle::InputOffset() const {
-  int pos = ftell(fp_);
+int64_t IOHandle::Offset() const {
+  int64_t pos = ftell(fp_);
   PCHECK(pos >= 0) << "Failed to get offset";
   return pos;
+}
+
+void IOHandle::Seek(int64_t offset) {
+  fseek(fp_, offset, SEEK_SET);
 }
 
 }  // namespace diodb

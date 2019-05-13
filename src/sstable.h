@@ -48,10 +48,15 @@ class SSTable : public TableStats, public ReadableTable {
     Buffer k(key.begin(), key.end());
     return Get(std::move(k));
   }
+
   virtual size_t Size() const override { return num_valid_entries(); }
+
+  // Verify SSTable invariants.
+  bool SanityCheck();
 
   // Accessors.
   fs::path filepath() const { return filepath_; }
+  size_t table_id() const { return table_id_; }
 
   // TODO: stats such as num_bytes..
 

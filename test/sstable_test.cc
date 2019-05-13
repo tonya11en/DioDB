@@ -13,14 +13,19 @@
 #include "src/memtable.h"
 #include "test/mocks/sstable_mock.h"
 
+using std::string;
+using std::pair;
+using std::vector;
+using std::function;
+
 namespace fs = boost::filesystem;
 namespace diodb {
 namespace test {
 
 class SSTableTest : public ::testing::Test {
  protected:
-  std::vector<char> S2Vec(const std::string&& s) {
-    std::vector<char> v(s.begin(), s.end());
+  vector<char> S2Vec(const string&& s) {
+    vector<char> v(s.begin(), s.end());
     return v;
   }
   void TearDown() override {
@@ -31,7 +36,7 @@ class SSTableTest : public ::testing::Test {
 
   // Returns a path to a touched file with a given filename, then cleans up
   // the file at the end of the test.
-  fs::path TouchFile(const std::string& filename) {
+  fs::path TouchFile(const string& filename) {
     fs::path filepath = filename;
     std::ofstream ofs = std::ofstream(filepath.generic_string());
     files_to_clean_.emplace_back(filepath);
@@ -40,7 +45,7 @@ class SSTableTest : public ::testing::Test {
 
   // Returns a filepath prefixed by the current working directory, then cleans
   // up the file at the end of the test.
-  fs::path GetTempFilename(const std::string& filename) {
+  fs::path GetTempFilename(const string& filename) {
     auto p = filename;
     files_to_clean_.emplace_back(p);
     if (fs::exists(fs::path(filename))) {
@@ -49,8 +54,18 @@ class SSTableTest : public ::testing::Test {
     return p;
   }
 
+  // Makes an SSTable object from a vector of KV pairs.
+  static MockSSTable::SSTablePtr MakeSST(fs::path filename, vector<pair<string, string>> kvs) {
+    Memtable memtable;
+    for (const auto& kv : kvs) {
+      memtable.Put(kv.first, kv.second);
+    }
+    memtable.Lock();
+    return std::make_shared<SSTable>(filename, memtable);
+  }
+
  private:
-  std::vector<fs::path> files_to_clean_;
+  vector<fs::path> files_to_clean_;
 };
 
 TEST_F(SSTableTest, ValidExistingFileTest) {
@@ -63,13 +78,13 @@ TEST_F(SSTableTest, ValidExistingFileTest) {
 TEST_F(SSTableTest, NonExistingFileTest) {
   fs::path sstable_filepath = fs::current_path() / "bogus_filename";
 
-  const std::string failure_regex = "SSTable file .* does not exist";
+  const string failure_regex = "SSTable file .* does not exist";
   ASSERT_DEATH({ MockSSTable sstable(sstable_filepath); }, failure_regex);
 }
 
 TEST_F(SSTableTest, VerifyLockedMemtableFlush) {
   Memtable memtable;
-  const std::string failure_regex = "unlocked memtable";
+  const string failure_regex = "unlocked memtable";
   ASSERT_DEATH(
       {
         MockSSTable sstable(GetTempFilename("VerifyLockedMemtableFlush"),
@@ -83,23 +98,23 @@ TEST_F(SSTableTest, UnexpectedExistingFileTestMemtable) {
   Memtable memtable;
   memtable.Lock();
 
-  const std::string failure_regex = "SSTable file .* exists";
+  const string failure_regex = "SSTable file .* exists";
   ASSERT_DEATH({ MockSSTable sstable(sstable_filepath, memtable); },
                failure_regex);
 }
 
 TEST_F(SSTableTest, UnexpectedExistingFileTestSSTable) {
-  std::vector<fs::path> fpv;
+  vector<fs::path> fpv;
   fpv.emplace_back(TouchFile("unexpected_file1"));
   fpv.emplace_back(TouchFile("unexpected_file2"));
   fpv.emplace_back(TouchFile("unexpected_file3"));
 
-  std::vector<MockSSTable::SSTablePtr> sstv;
+  vector<MockSSTable::SSTablePtr> sstv;
   for (const auto& p : fpv) {
     sstv.emplace_back(std::make_shared<MockSSTable>(p));
   }
 
-  const std::string failure_regex = "SSTable file .* exists";
+  const string failure_regex = "SSTable file .* exists";
   const auto& existing_file = fpv[0];
   ASSERT_DEATH({ MockSSTable sstable(existing_file, sstv); }, failure_regex);
 }
@@ -109,7 +124,7 @@ TEST_F(SSTableTest, MemtableFlushBasic) {
 
   // Populate memtable.
   Memtable memtable;
-  std::vector<std::pair<std::string, std::string>> kvs;
+  vector<pair<string, string>> kvs;
   for (int ii = 0; ii < num_entries; ++ii) {
     kvs.emplace_back("foo" + std::to_string(ii), "bar" + std::to_string(ii));
   }
@@ -129,7 +144,7 @@ TEST_F(SSTableTest, MemtableFlushBasic) {
   Segment segment;
 
   IOHandle iohandle(filename);
-  std::vector<char> last_key;
+  vector<char> last_key;
   for (int ii = 0; ii < num_entries; ++ii) {
     iohandle.ParseNext(&segment);
     if (ii != 0) {
@@ -180,7 +195,42 @@ TEST_F(SSTableTest, SSTableKeyExists) {
 }
 
 TEST_F(SSTableTest, SSTableMergeBasic) {
-  Memtable memtable;
+  auto merge_helper =
+    [](int n, int size, int offset,
+       fs::path filename,
+       function<MockSSTable::SSTablePtr(fs::path, vector<pair<string, string>>)> make_sst) {
+
+    using KVPair = pair<string, string>;
+    vector<KVPair> kvs;
+    for (int ii = offset; ii < n * size; ii += n) {
+      kvs.emplace_back(std::to_string(ii), std::to_string(ii) + "-val");
+    }
+
+    MockSSTable::SSTablePtr sst = make_sst(filename, kvs);
+    return sst;
+  };
+
+  auto filename = GetTempFilename("SSTableMergeBasic-0");
+  vector<MockSSTable::SSTablePtr> ssts;
+  ssts.emplace_back(merge_helper(3, 10, 0, filename, MakeSST));
+  filename = GetTempFilename("SSTableMergeBasic-1");
+  ssts.emplace_back(merge_helper(3, 10, 1, filename, MakeSST));
+  filename = GetTempFilename("SSTableMergeBasic-2");
+  ssts.emplace_back(merge_helper(3, 10, 2, filename, MakeSST));
+
+  ASSERT_TRUE(ssts.at(0)->KeyExists(std::to_string(0)));
+  ASSERT_FALSE(ssts.at(0)->KeyExists(std::to_string(1)));
+  ASSERT_TRUE(ssts.at(1)->KeyExists(std::to_string(1)));
+  ASSERT_FALSE(ssts.at(1)->KeyExists(std::to_string(2)));
+  ASSERT_TRUE(ssts.at(2)->KeyExists(std::to_string(2)));
+  ASSERT_FALSE(ssts.at(2)->KeyExists(std::to_string(3)));
+
+  filename = GetTempFilename("SSTableMergeBasic-merged");
+  MockSSTable sstable(filename, ssts);
+  CHECK(sstable.SanityCheck());
+  for (int ii = 0; ii < 10; ++ii) {
+    ASSERT_TRUE(sstable.KeyExists(std::to_string(ii))) << ii;
+  }
 }
 
 }  // namespace test

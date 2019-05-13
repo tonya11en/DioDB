@@ -23,13 +23,16 @@ class IOHandle {
   bool SegmentWrite(const Segment &segment);
 
   // Current offset in the coded stream.
-  int InputOffset() const;
+  int64_t Offset() const;
+
+  // Jump to specified offset in the SSTable file.
+  void Seek(int64_t offset);
 
   // Sync writes to disk.
   void Flush();
 
   // True if current offset is at the end of the file.
-  bool End() const { return InputOffset() == fs::file_size(filepath_); };
+  bool End() const { return Offset() == fs::file_size(filepath_); };
 
   // Accessors.
   fs::path filepath() { return filepath_; }

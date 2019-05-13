@@ -72,8 +72,9 @@ SSTable::SSTable(const fs::path new_sstable_path,
 
   io_handle_ = std::make_unique<IOHandle>(filepath_);
 
-  // TODO
-  // file_size_ = fs::file_size(filepath_);
+  MergeSSTables(sstables);
+  file_size_ = fs::file_size(filepath_);
+  BuildSparseIndexFromFile(filepath_);
 }
 
 void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
@@ -84,30 +85,28 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
     parent_sst_handles_.emplace_back(sst->filepath());
   }
 
-  auto all_handles_finished = [&parent_sst_handles_]() -> bool {
-    for (const auto& h : parent_sst_handles_) {
-      if (!h.End()) {
+  // The segment cache maps the index of the parent SST to the last object read
+  // from it that was not yet written to disk. The parent SST vector index
+  // corresponds with the cache's index.
+  std::vector<std::shared_ptr<Segment>> segment_cache(sstables.size());
+  std::function<bool(const std::shared_ptr<Segment> s)> cache_empty =
+    [](const std::shared_ptr<Segment> p){ return p == nullptr;};
+
+  auto ssts_exhausted = [&parent_sst_handles_]() -> bool {
+    for (int ii = 0; ii < parent_sst_handles_.size(); ++ii) {
+      if (!parent_sst_handles_.at(ii).End()) {
         return false;
       }
     }
     return true;
   };
 
-  // The segment cache maps the index of the parent SST to the last object read
-  // from it that was not yet written to disk. The parent SST vector index
-  // corresponds with the cache's index.
-  std::vector<std::shared_ptr<Segment>> segment_cache;
-  std::function<bool(const std::shared_ptr<Segment> s)> cache_empty =
-    [](const std::shared_ptr<Segment> p){ return p == nullptr;};
-
   // Perform the merge.
   //
   // TODO: This could be micro-optimized to avoid multiple evaluations, but
   //       right now the focus is on correctness.
-  while (!all_handles_finished() &&
-         !std::all_of(segment_cache.begin(), segment_cache.end(), cache_empty)) {
+  while (!ssts_exhausted()) {
     // The index containing the segment whose key evaluates as the minimum.
-    // Set to -1 to indicate whether a minimum has been selected yet for a loop.
     int current_min_idx = 0;
     for (int idx = 0; idx < parent_sst_handles_.size(); ++idx) {
       IOHandle& h = parent_sst_handles_.at(idx);
@@ -118,6 +117,7 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
       // We're not at the end of the file, so read from disk and opulate the
       // cache if it's empty. We only write to disk from the cache.
       if (segment_cache[idx] == nullptr) {
+        CHECK(!h.End());
         auto segment = std::make_shared<Segment>();
         h.ParseNext(segment.get());
         segment_cache[idx] = std::move(segment);
@@ -129,10 +129,20 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
         current_min_idx = idx;
       }
     }
+    
     io_handle_->SegmentWrite(*segment_cache[current_min_idx]);
     segment_cache[current_min_idx].reset();
   }
 
+  // Clear out the remainder of the segment cache.
+  sort(segment_cache.begin(), segment_cache.end());
+  for (const auto& sp : segment_cache) {
+    if (sp != nullptr) {
+      io_handle_->SegmentWrite(*sp);
+    }
+  }
+
+  io_handle_->Flush();
   file_size_ = fs::file_size(io_handle_->filepath());
 }
 
@@ -140,7 +150,7 @@ void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
   LOG(INFO) << "Building sparse index for SSTable " << table_id_;
 
   if (file_size_ == 0) {
-    LOG(INFO) << "Building sparse index from empty file";
+    LOG(WARNING) << "Building sparse index from empty file";
     return;
   }
 
@@ -148,15 +158,15 @@ void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
   io_handle_->Reset();
   while (!io_handle_->End()) {
     Segment segment;
-    CHECK_LE(last_offset, io_handle_->InputOffset());
+    CHECK_LE(last_offset, io_handle_->Offset());
 
     // Always add the first key in the SSTable and index after the appropriate
     // number of bytes has been cycled through.
-    if (io_handle_->InputOffset() == 0 ||
-        io_handle_->InputOffset() - last_offset >= KeyIndexOffsetBytes()) {
+    if (io_handle_->Offset() == 0 ||
+        io_handle_->Offset() - last_offset >= KeyIndexOffsetBytes()) {
       // We're past the minimum file offset, so insert into the sparse index.
-      sparse_index_[std::move(segment.key)] = io_handle_->InputOffset();
-      last_offset = io_handle_->InputOffset();
+      sparse_index_[std::move(segment.key)] = io_handle_->Offset();
+      last_offset = io_handle_->Offset();
     }
 
     io_handle_->ParseNext(&segment);
@@ -193,10 +203,14 @@ bool SSTable::KeyExists(const Buffer& key) const {
     // The index entry is guaranteed to evaluate greater than the key now, so
     // if it's the smallest item in the index, it's not a match.
     return false;
+  } else if (it == sparse_index_.end()) {
+    // All keys in the sparse index evaluate lower than the provided key. Take
+    // the last element in the index.
+    it = std::prev(sparse_index_.end());
   }
 
-  io_handle_->Reset();
   Segment segment;
+  io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
     io_handle_->ParseNext(&segment);
     if (key < segment.key) {
@@ -216,6 +230,24 @@ Buffer SSTable::Get(const Buffer& key) const {
 
 off_t SSTable::KeyIndexOffsetBytes() const {
   return FLAGS_sstable_index_offset_bytes;
+}
+
+bool SSTable::SanityCheck() {
+  DLOG(INFO) << "sanity checking sstable " << table_id_;
+  io_handle_->Reset();
+
+  Segment segment, last_segment;
+  while (!io_handle_->End()) {
+    last_segment = segment;
+    io_handle_->ParseNext(&segment);
+    if (!last_segment.key.empty() && last_segment.key > segment.key) {
+      DLOG(INFO) << "failed sanity check. " << segment.DebugString()
+                 << " comes before " << last_segment.DebugString();
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace diodb

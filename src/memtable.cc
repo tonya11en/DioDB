@@ -10,12 +10,6 @@ namespace diodb {
 
 Memtable::Memtable() : is_locked_(false) {}
 
-Memtable::Memtable(std::vector<std::pair<std::string, std::string>> init_vec) {
-  for (const auto& it : init_vec) {
-    Put(it.first, it.second);
-  }
-}
-
 bool Memtable::KeyExists(const Buffer& key) const {
   if (memtable_map_.count(key) > 0) {
     return !memtable_map_.at(key).delete_entry;

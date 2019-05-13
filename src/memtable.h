@@ -15,8 +15,6 @@ namespace diodb {
 class Memtable : public TableStats, public ReadableTable {
  public:
   Memtable();
-  Memtable(std::vector<std::pair<std::string, std::string>> init_vec);
-
   ~Memtable() {}
 
   // ReadableTable.
