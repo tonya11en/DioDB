@@ -194,7 +194,29 @@ TEST_F(SSTableTest, SSTableKeyExists) {
   ASSERT_TRUE(sstable.KeyExists("f"));
 }
 
-TEST_F(SSTableTest, SSTableMergeBasic) {
+TEST_F(SSTableTest, SSTableMergeBasicAdjacent) {
+  using KVPair = pair<string, string>;
+  vector<KVPair> kvs0, kvs1;
+  for (int ii = 0; ii < 100; ++ii) {
+    kvs0.emplace_back(std::to_string(ii), std::to_string(ii) + "-val");
+    kvs1.emplace_back(std::to_string(100 + ii), std::to_string(100 + ii) + "-val");
+  }
+
+  vector<MockSSTable::SSTablePtr> ssts;
+  auto filename = GetTempFilename("SSTableMergeBasicAdjacent-0");
+  ssts.emplace_back(MakeSST(filename, kvs0));
+  filename = GetTempFilename("SSTableMergeBasicAdjacent-1");
+  ssts.emplace_back(MakeSST(filename, kvs1));
+
+  filename = GetTempFilename("SSTableMergeBasicAdjacent-merged");
+  MockSSTable sstable(filename, ssts);
+  CHECK(sstable.SanityCheck());
+  for (int ii = 0; ii < 200; ++ii) {
+    ASSERT_TRUE(sstable.KeyExists(std::to_string(ii))) << ii;
+  }
+}
+
+TEST_F(SSTableTest, SSTableMergeBasicInterleave) {
   auto merge_helper =
     [](int n, int size, int offset,
        fs::path filename,
@@ -210,13 +232,13 @@ TEST_F(SSTableTest, SSTableMergeBasic) {
     return sst;
   };
 
-  auto filename = GetTempFilename("SSTableMergeBasic-0");
+  auto filename = GetTempFilename("SSTableMergeBasicInterleave-0");
   vector<MockSSTable::SSTablePtr> ssts;
-  ssts.emplace_back(merge_helper(3, 10, 0, filename, MakeSST));
-  filename = GetTempFilename("SSTableMergeBasic-1");
-  ssts.emplace_back(merge_helper(3, 10, 1, filename, MakeSST));
-  filename = GetTempFilename("SSTableMergeBasic-2");
-  ssts.emplace_back(merge_helper(3, 10, 2, filename, MakeSST));
+  ssts.emplace_back(merge_helper(3, 100, 0, filename, MakeSST));
+  filename = GetTempFilename("SSTableMergeBasicInterleave-1");
+  ssts.emplace_back(merge_helper(3, 100, 1, filename, MakeSST));
+  filename = GetTempFilename("SSTableMergeBasicInterleave-2");
+  ssts.emplace_back(merge_helper(3, 100, 2, filename, MakeSST));
 
   ASSERT_TRUE(ssts.at(0)->KeyExists(std::to_string(0)));
   ASSERT_FALSE(ssts.at(0)->KeyExists(std::to_string(1)));
@@ -225,13 +247,36 @@ TEST_F(SSTableTest, SSTableMergeBasic) {
   ASSERT_TRUE(ssts.at(2)->KeyExists(std::to_string(2)));
   ASSERT_FALSE(ssts.at(2)->KeyExists(std::to_string(3)));
 
-  filename = GetTempFilename("SSTableMergeBasic-merged");
+  filename = GetTempFilename("SSTableMergeBasicInterleave-merged");
   MockSSTable sstable(filename, ssts);
   CHECK(sstable.SanityCheck());
-  for (int ii = 0; ii < 10; ++ii) {
+  for (int ii = 0; ii < 300; ++ii) {
     ASSERT_TRUE(sstable.KeyExists(std::to_string(ii))) << ii;
   }
 }
 
+#if 0
+TEST_F(SSTableTest, SSTableMergeDuplicates) {
+  using KVPair = pair<string, string>;
+  vector<KVPair> kvs0, kvs1;
+  for (int ii = 0; ii < 100; ++ii) {
+    kvs0.emplace_back(std::to_string(ii), std::to_string(ii) + "-val");
+    kvs1.emplace_back(std::to_string(100 + ii), std::to_string(100 + ii) + "-val");
+  }
+
+  vector<MockSSTable::SSTablePtr> ssts;
+  auto filename = GetTempFilename("SSTableMergeBasicAdjacent-0");
+  ssts.emplace_back(MakeSST(filename, kvs0));
+  filename = GetTempFilename("SSTableMergeBasicAdjacent-1");
+  ssts.emplace_back(MakeSST(filename, kvs1));
+
+  filename = GetTempFilename("SSTableMergeBasicAdjacent-merged");
+  MockSSTable sstable(filename, ssts);
+  CHECK(sstable.SanityCheck());
+  for (int ii = 0; ii < 200; ++ii) {
+    ASSERT_TRUE(sstable.KeyExists(std::to_string(ii))) << ii;
+  }
+}
+#endif
 }  // namespace test
 }  // namespace diodb

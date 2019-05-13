@@ -130,14 +130,19 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
       }
     }
     
+    LOG(INFO) << "@tallen offset " << io_handle_->Offset();
+    LOG(INFO) << "@tallen writing segment during merge " << segment_cache[current_min_idx]->DebugString();
     io_handle_->SegmentWrite(*segment_cache[current_min_idx]);
     segment_cache[current_min_idx].reset();
   }
 
-  // Clear out the remainder of the segment cache.
+  // There's nothing left to read from file. Merge the remainder of the segment
+  // cache.
   sort(segment_cache.begin(), segment_cache.end());
   for (const auto& sp : segment_cache) {
     if (sp != nullptr) {
+      LOG(INFO) << "@tallen offset " << io_handle_->Offset();
+      LOG(INFO) << "@tallen writing segment during merge " << sp->DebugString();
       io_handle_->SegmentWrite(*sp);
     }
   }
@@ -147,10 +152,10 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
 }
 
 void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
-  LOG(INFO) << "Building sparse index for SSTable " << table_id_;
+  LOG(INFO) << "building sparse index for SSTable " << table_id_;
 
   if (file_size_ == 0) {
-    LOG(WARNING) << "Building sparse index from empty file";
+    LOG(WARNING) << "building sparse index from empty file";
     return;
   }
 
@@ -162,15 +167,21 @@ void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
 
     // Always add the first key in the SSTable and index after the appropriate
     // number of bytes has been cycled through.
+    int64_t offset = -1;
     if (io_handle_->Offset() == 0 ||
         io_handle_->Offset() - last_offset >= KeyIndexOffsetBytes()) {
       // We're past the minimum file offset, so insert into the sparse index.
-      sparse_index_[std::move(segment.key)] = io_handle_->Offset();
-      last_offset = io_handle_->Offset();
+      offset = io_handle_->Offset();
     }
 
     io_handle_->ParseNext(&segment);
+    if (offset >= 0) {
+      sparse_index_.emplace(segment.key, io_handle_->Offset());
+      last_offset = io_handle_->Offset();
+    }
   }
+
+  LOG(INFO) << "built sparse index of size " << sparse_index_.size();
 }
 
 bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
@@ -196,6 +207,7 @@ bool SSTable::KeyExists(const Buffer& key) const {
   }
 
   auto it = sparse_index_.lower_bound(key);
+  LOG(INFO) << "@tallen iterator distance from lb: " << std::distance(sparse_index_.begin(), it);
   if (it->first == key) {
     // Exact match in the sparse index.
     return true;
@@ -203,19 +215,22 @@ bool SSTable::KeyExists(const Buffer& key) const {
     // The index entry is guaranteed to evaluate greater than the key now, so
     // if it's the smallest item in the index, it's not a match.
     return false;
-  } else if (it == sparse_index_.end()) {
-    // All keys in the sparse index evaluate lower than the provided key. Take
-    // the last element in the index.
-    it = std::prev(sparse_index_.end());
+  } else {
+    it = std::prev(it);
   }
 
   Segment segment;
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
+    LOG(INFO) << "@tallen parse offset " << io_handle_->Offset();
     io_handle_->ParseNext(&segment);
     if (key < segment.key) {
+      // It's impossible to encounter the key since the remaining values to
+      // check will only be increasing.
+      LOG(INFO) << "@tallen not here";
       return false;
     } else if (key == segment.key) {
+      LOG(INFO) << "@tallen found";
       return true;
     }
   }
