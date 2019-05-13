@@ -77,6 +77,14 @@ class SSTable : public TableStats, public ReadableTable {
   // contents. The merge keeps the most recent version of any segment.
   void MergeSSTables(const std::vector<SSTablePtr>& sstables);
 
+  // Batches up writes, such that identical keys are deduped and age
+  // priority is resolved. A call to Flush() is necessary to fully clear the
+  // batch.
+  void ResolveWrite(Segment&& segment, int age);
+
+  // Sync writes to disk.
+  void Flush();
+
   // Accessor.
   int32_t file_size() { return file_size_; }
 
@@ -96,6 +104,11 @@ class SSTable : public TableStats, public ReadableTable {
 
   // SSTable segment file controller.
   std::unique_ptr<IOHandle> io_handle_;
+
+  // Buffer maintained for resolving write batches during merge. Contains a
+  // segment and its age. Younger (lower number) sstables will replace old ones
+  // with the same key.
+  std::pair<Segment, int> merge_buffer_;
 };
 
 }  // namespace diodb

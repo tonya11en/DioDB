@@ -130,25 +130,38 @@ void SSTable::MergeSSTables(const std::vector<SSTablePtr>& sstables) {
       }
     }
     
-    LOG(INFO) << "@tallen offset " << io_handle_->Offset();
-    LOG(INFO) << "@tallen writing segment during merge " << segment_cache[current_min_idx]->DebugString();
-    io_handle_->SegmentWrite(*segment_cache[current_min_idx]);
+    ResolveWrite(std::move(*segment_cache[current_min_idx]), current_min_idx);
     segment_cache[current_min_idx].reset();
   }
 
   // There's nothing left to read from file. Merge the remainder of the segment
   // cache.
-  sort(segment_cache.begin(), segment_cache.end());
-  for (const auto& sp : segment_cache) {
-    if (sp != nullptr) {
-      LOG(INFO) << "@tallen offset " << io_handle_->Offset();
-      LOG(INFO) << "@tallen writing segment during merge " << sp->DebugString();
-      io_handle_->SegmentWrite(*sp);
+  stable_sort(segment_cache.begin(), segment_cache.end());
+  for (int ii = 0; ii < segment_cache.size(); ++ii) {
+    if (segment_cache[ii] != nullptr) {
+      ResolveWrite(std::move(*segment_cache[ii]), ii);
     }
   }
 
-  io_handle_->Flush();
+  Flush();
   file_size_ = fs::file_size(io_handle_->filepath());
+}
+
+void SSTable::ResolveWrite(Segment&& segment, const int age) {
+  if (merge_buffer_.first.key.empty()) {
+    merge_buffer_.first = std::move(segment);
+    return;
+  }
+
+  if (merge_buffer_.first.key != segment.key) {
+    // Segment in the buffer is the youngest write for that key. Persist it.
+    io_handle_->SegmentWrite(merge_buffer_.first);
+    merge_buffer_.first = std::move(segment);
+  } else if (merge_buffer_.first.key == segment.key &&
+             age < merge_buffer_.second) {
+    // Replace a stale write with a more recent one.
+    merge_buffer_.first = std::move(segment);
+  }
 }
 
 void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
@@ -207,7 +220,6 @@ bool SSTable::KeyExists(const Buffer& key) const {
   }
 
   auto it = sparse_index_.lower_bound(key);
-  LOG(INFO) << "@tallen iterator distance from lb: " << std::distance(sparse_index_.begin(), it);
   if (it->first == key) {
     // Exact match in the sparse index.
     return true;
@@ -222,15 +234,12 @@ bool SSTable::KeyExists(const Buffer& key) const {
   Segment segment;
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
-    LOG(INFO) << "@tallen parse offset " << io_handle_->Offset();
     io_handle_->ParseNext(&segment);
     if (key < segment.key) {
       // It's impossible to encounter the key since the remaining values to
       // check will only be increasing.
-      LOG(INFO) << "@tallen not here";
       return false;
     } else if (key == segment.key) {
-      LOG(INFO) << "@tallen found";
       return true;
     }
   }
@@ -263,6 +272,14 @@ bool SSTable::SanityCheck() {
   }
 
   return true;
+}
+
+void SSTable::Flush() {
+  if (!merge_buffer_.first.key.empty()) {
+    io_handle_->SegmentWrite(merge_buffer_.first);
+    merge_buffer_.first = Segment();
+  }
+  io_handle_->Flush();
 }
 
 }  // namespace diodb
