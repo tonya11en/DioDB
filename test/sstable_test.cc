@@ -283,7 +283,28 @@ TEST_F(SSTableTest, SSTableMergeDuplicates) {
   filename = GetTempFilename("SSTableMergeBasicAdjacent-merged");
   MockSSTable sstable(filename, ssts);
   CHECK(sstable.SanityCheck());
-  //TODO
+
+  ASSERT_EQ(sstable.Get("0"), String2Vec("0-new"));
+  ASSERT_EQ(sstable.Get("1"), String2Vec("1-new"));
+  ASSERT_EQ(sstable.Get("2"), String2Vec("2-old"));
+  ASSERT_EQ(sstable.Get("3"), String2Vec("3-new"));
+}
+
+TEST_F(SSTableTest, SSTableGetBasic) {
+  Memtable memtable;
+  memtable.Put("holy", "diver");
+  memtable.Put("you", "been");
+  memtable.Put("gone", "too");
+  memtable.Put("long", "inthemidnightsea");
+  memtable.Lock();
+
+  auto filename = GetTempFilename("SSTableGetBasic");
+  MockSSTable sstable(filename, memtable);
+
+  ASSERT_EQ(sstable.Get("holy"), String2Vec("diver"));
+  ASSERT_EQ(sstable.Get("you"), String2Vec("been"));
+
+  CHECK(sstable.SanityCheck());
 }
 
 }  // namespace test

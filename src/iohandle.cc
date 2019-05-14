@@ -10,6 +10,8 @@
 #include "src/buffer.h"
 #include "src/iohandle.h"
 
+using namespace std;
+
 namespace diodb {
 
 IOHandle::IOHandle(const fs::path& filepath) : filepath_(filepath) {

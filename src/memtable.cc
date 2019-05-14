@@ -6,6 +6,8 @@
 
 #include "memtable.h"
 
+using namespace std;
+
 namespace diodb {
 
 Memtable::Memtable() : is_locked_(false) {}
@@ -17,11 +19,11 @@ bool Memtable::KeyExists(const Buffer& key) const {
   return false;
 }
 
-void Memtable::Put(const std::string& key, const std::string& val,
+void Memtable::Put(const string& key, const string& val,
                    const bool del) {
   Buffer key_buf(key.begin(), key.end());
   Buffer val_buf(val.begin(), val.end());
-  Put(std::move(key_buf), std::move(val_buf), del);
+  Put(move(key_buf), move(val_buf), del);
 }
 
 void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
@@ -34,9 +36,9 @@ void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
       --mutable_num_delete_entries();
       ++mutable_num_valid_entries();
     }
-    memtable_map_[key] = std::move(segment);
+    memtable_map_[key] = move(segment);
   } else {
-    memtable_map_.emplace(std::move(key), std::move(segment));
+    memtable_map_.emplace(move(key), move(segment));
     ++mutable_num_valid_entries();
   }
 }
@@ -57,7 +59,7 @@ void Memtable::Erase(Buffer&& key) {
     memtable_map_[key].delete_entry = true;
   } else if (memtable_map_.count(key) == 0) {
     Buffer buf;
-    Put(std::move(key), std::move(buf), true /* del */);
+    Put(move(key), move(buf), true /* del */);
   }
 
   --mutable_num_valid_entries();
