@@ -32,7 +32,9 @@ class IOHandle {
   void Flush();
 
   // True if current offset is at the end of the file.
-  bool End() const { return Offset() == fs::file_size(filepath_); };
+  bool End() const {
+    return Offset() == static_cast<int64_t>(fs::file_size(filepath_));
+  };
 
   // Accessors.
   fs::path filepath() { return filepath_; }

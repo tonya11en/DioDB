@@ -137,7 +137,7 @@ TEST_F(SSTableTest, MemtableFlushBasic) {
     kvs.emplace_back("foo" + std::to_string(ii), "bar" + std::to_string(ii));
   }
   std::random_shuffle(kvs.begin(), kvs.end());
-  for (int ii = 0; ii < kvs.size(); ++ii) {
+  for (size_t ii = 0; ii < kvs.size(); ++ii) {
     memtable.Put(std::move(kvs[ii].first), std::move(kvs[ii].second));
   }
   memtable.Lock();

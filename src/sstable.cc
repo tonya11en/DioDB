@@ -161,7 +161,6 @@ void SSTable::FinishSegmentCache(vector<shared_ptr<Segment>>& segment_cache) {
   }
   for (auto& s : young_segments) {
     // Age doesn't matter here since all segments are unique.
-    LOG(INFO) << "@tallen clean up " << s->DebugString();
     ResolveWrite(move(*s), 0);
   }
 }
@@ -180,8 +179,6 @@ void SSTable::ResolveWrite(Segment&& segment, const int age) {
   } else if (merge_buffer_.first.key == segment.key &&
              age < merge_buffer_.second) {
     // Replace a stale write with a more recent one.
-    LOG(INFO) << "@tallen replacing stale val " << merge_buffer_.first.DebugString();
-    LOG(INFO) << "@tallen with val " << segment.DebugString();
     merge_buffer_.first = move(segment);
   }
 }
@@ -211,7 +208,6 @@ void SSTable::BuildSparseIndexFromFile(const fs::path filepath) {
 
     io_handle_->ParseNext(&segment);
     if (offset >= 0) {
-      LOG(INFO) << "@tallen sparse index adding key @ offset " << offset;
       sparse_index_.emplace(segment.key, offset);
       last_offset = offset;
     }
@@ -251,6 +247,8 @@ bool SSTable::FindSegment(const Buffer& key, Segment *segment) const {
   auto it = sparse_index_.lower_bound(key);
   if (it->first == key) {
     // Exact match in the sparse index.
+    io_handle_->Seek(it->second);
+    io_handle_->ParseNext(segment);
     return true;
   } else if (it == sparse_index_.cbegin()) {
     // The index entry is guaranteed to evaluate greater than the key now, so
@@ -263,7 +261,6 @@ bool SSTable::FindSegment(const Buffer& key, Segment *segment) const {
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
     io_handle_->ParseNext(segment);
-    LOG(INFO) << "@tallen " << segment->DebugString();
     if (key < segment->key) {
       // It's impossible to encounter the key since the remaining values to
       // check will only be increasing.
@@ -279,7 +276,6 @@ bool SSTable::FindSegment(const Buffer& key, Segment *segment) const {
 Buffer SSTable::Get(const Buffer& key) const {
   Segment segment;
   const bool found = FindSegment(key, &segment);
-  LOG(INFO) << "@tallen GET segment is " << segment.DebugString();
 
   return found ? segment.val : Buffer();
 }
@@ -312,7 +308,6 @@ void SSTable::Flush() {
     merge_buffer_.first = Segment();
   }
   io_handle_->Flush();
-  LOG(INFO) << "@tallen flushing";
 }
 
 }  // namespace diodb
