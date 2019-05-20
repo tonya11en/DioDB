@@ -1,6 +1,6 @@
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
 
 #include <glog/logging.h>
 
@@ -19,8 +19,7 @@ bool Memtable::KeyExists(const Buffer& key) const {
   return false;
 }
 
-void Memtable::Put(const string& key, const string& val,
-                   const bool del) {
+void Memtable::Put(const string& key, const string& val, const bool del) {
   Buffer key_buf(key.begin(), key.end());
   Buffer val_buf(val.begin(), val.end());
   Put(move(key_buf), move(val_buf), del);

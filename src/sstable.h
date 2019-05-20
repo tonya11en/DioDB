@@ -87,7 +87,7 @@ class SSTable : public TableStats, public ReadableTable {
 
   // Finds a segment in the SSTable given a key and puts it in the provided
   // segment reference. Returns true if one is found.
-  bool FindSegment(const Buffer& key, Segment *segment) const;
+  bool FindSegment(const Buffer& key, Segment* segment) const;
 
   // Writes the remaining items in the segment cache in the correct order, while
   // also keeping track of the age of each item.

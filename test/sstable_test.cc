@@ -13,10 +13,10 @@
 #include "src/memtable.h"
 #include "test/mocks/sstable_mock.h"
 
-using std::string;
-using std::pair;
-using std::vector;
 using std::function;
+using std::pair;
+using std::string;
+using std::vector;
 
 namespace fs = boost::filesystem;
 namespace diodb {
@@ -63,7 +63,8 @@ class SSTableTest : public ::testing::Test {
   }
 
   // Makes an SSTable object from a vector of KV pairs.
-  static MockSSTable::SSTablePtr MakeSST(fs::path filename, vector<pair<string, string>> kvs) {
+  static MockSSTable::SSTablePtr MakeSST(fs::path filename,
+                                         vector<pair<string, string>> kvs) {
     Memtable memtable;
     for (const auto& kv : kvs) {
       memtable.Put(kv.first, kv.second);
@@ -207,7 +208,8 @@ TEST_F(SSTableTest, SSTableMergeBasicAdjacent) {
   vector<KVPair> kvs0, kvs1;
   for (int ii = 0; ii < 100; ++ii) {
     kvs0.emplace_back(std::to_string(ii), std::to_string(ii) + "-val");
-    kvs1.emplace_back(std::to_string(100 + ii), std::to_string(100 + ii) + "-val");
+    kvs1.emplace_back(std::to_string(100 + ii),
+                      std::to_string(100 + ii) + "-val");
   }
 
   vector<MockSSTable::SSTablePtr> ssts;
@@ -225,11 +227,10 @@ TEST_F(SSTableTest, SSTableMergeBasicAdjacent) {
 }
 
 TEST_F(SSTableTest, SSTableMergeBasicInterleave) {
-  auto merge_helper =
-    [](int n, int size, int offset,
-       fs::path filename,
-       function<MockSSTable::SSTablePtr(fs::path, vector<pair<string, string>>)> make_sst) {
-
+  auto merge_helper = [](int n, int size, int offset, fs::path filename,
+                         function<MockSSTable::SSTablePtr(
+                             fs::path, vector<pair<string, string>>)>
+                             make_sst) {
     using KVPair = pair<string, string>;
     vector<KVPair> kvs;
     for (int ii = offset; ii < n * size; ii += n) {

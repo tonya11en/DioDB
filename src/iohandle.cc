@@ -100,8 +100,6 @@ int64_t IOHandle::Offset() const {
   return pos;
 }
 
-void IOHandle::Seek(int64_t offset) {
-  fseek(fp_, offset, SEEK_SET);
-}
+void IOHandle::Seek(int64_t offset) { fseek(fp_, offset, SEEK_SET); }
 
 }  // namespace diodb

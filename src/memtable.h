@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "buffer.h"
 #include "readable_table_base.h"

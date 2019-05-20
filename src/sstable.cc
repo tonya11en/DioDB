@@ -2,9 +2,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <algorithm>
-#include <queue>
 #include <fstream>
 #include <memory>
+#include <queue>
 
 #include <glog/logging.h>
 #include <boost/filesystem.hpp>
@@ -92,7 +92,7 @@ void SSTable::MergeSSTables(const vector<SSTablePtr>& sstables) {
   // corresponds with the cache's index.
   vector<shared_ptr<Segment>> segment_cache(sstables.size());
   function<bool(const shared_ptr<Segment> s)> cache_empty =
-    [](const shared_ptr<Segment> p){ return p == nullptr;};
+      [](const shared_ptr<Segment> p) { return p == nullptr; };
 
   auto ssts_exhausted = [&parent_sst_handles_]() -> bool {
     for (int ii = 0; ii < parent_sst_handles_.size(); ++ii) {
@@ -131,7 +131,7 @@ void SSTable::MergeSSTables(const vector<SSTablePtr>& sstables) {
         current_min_idx = idx;
       }
     }
-    
+
     ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
     segment_cache[current_min_idx].reset();
   }
@@ -149,10 +149,10 @@ void SSTable::FinishSegmentCache(vector<shared_ptr<Segment>>& segment_cache) {
   // inside the set will maintain the most recent items while also sorting those
   // keys.
   using SegmentPtr = shared_ptr<Segment>;
-  static auto sptr_compare =
-    [](const SegmentPtr& a, const SegmentPtr& b) -> bool {
-      return a->key < b->key;
-    };
+  static auto sptr_compare = [](const SegmentPtr& a,
+                                const SegmentPtr& b) -> bool {
+    return a->key < b->key;
+  };
   set<SegmentPtr, decltype(sptr_compare)> young_segments(sptr_compare);
   for (int ii = 0; ii < segment_cache.size(); ++ii) {
     if (segment_cache[ii] != nullptr) {
@@ -238,7 +238,7 @@ bool SSTable::KeyExists(const Buffer& key) const {
   return FindSegment(key, &segment);
 }
 
-bool SSTable::FindSegment(const Buffer& key, Segment *segment) const {
+bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
   CHECK(segment);
   if (sparse_index_.empty() || key < sparse_index_.begin()->first) {
     return false;
