@@ -45,12 +45,6 @@ class IOHandle {
 
   // File pointer.
   FILE *fp_;
-
-  // Format of information that is persisted on disk during a segment write.
-  // Format is as follows:
-  //
-  //   [key size][val size][key bytes][val bytes]
-  inline static constexpr const char *persisted_fmt_ = "%x%x%s%s";
 };
 
 }  // namespace diodb
