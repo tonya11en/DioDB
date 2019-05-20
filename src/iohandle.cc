@@ -10,6 +10,8 @@
 #include "src/buffer.h"
 #include "src/iohandle.h"
 
+using namespace std;
+
 namespace diodb {
 
 IOHandle::IOHandle(const fs::path& filepath) : filepath_(filepath) {
@@ -35,70 +37,69 @@ IOHandle::~IOHandle() { fclose(fp_); }
 void IOHandle::Reset() { fseek(fp_, 0, SEEK_SET); }
 
 void IOHandle::ParseNext(Segment* segment) {
-  CHECK(!Eof());
+  CHECK(!End());
   CHECK(segment);
-
-  auto validate_return = [](const size_t ret, const int expected_val) {
-    PCHECK(ret == expected_val) << "Error reading segment ret=" << ret;
-  };
 
   // Key size.
   size_t ret = fread(&(segment->key_size), sizeof(uint32_t), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 
   // Val size.
   ret = fread(&(segment->val_size), sizeof(uint32_t), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 
   segment->key.resize(segment->key_size);
   segment->val.resize(segment->val_size);
 
   // Key.
-  ret = fread(segment->key.data(), segment->key_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment->key_size > 0) {
+    ret = fread(segment->key.data(), segment->key_size, 1, fp_);
+    PCHECK(ret == 1) << "Error reading segment ret=" << ret;
+  }
 
   // Val.
-  ret = fread(segment->val.data(), segment->val_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment->val_size > 0) {
+    ret = fread(segment->val.data(), segment->val_size, 1, fp_);
+    PCHECK(ret == 1) << "Error reading segment ret=" << ret;
+  }
 
   // Determine delete.
   ret = fread(&(segment->delete_entry), sizeof(bool), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 }
 
 bool IOHandle::SegmentWrite(const Segment& segment) {
-  // TODO: Do something with string_view.
-  auto validate_return = [](const size_t ret, const int expected_val) {
-    PCHECK(ret == expected_val) << "Error writing segment ret=" << ret;
-  };
-
   // Key and val size.
   size_t ret = fwrite(&segment.key_size, sizeof(uint32_t), 2, fp_);
-  validate_return(ret, 2);
+  PCHECK(ret == 2) << "Error writing segment ret=" << ret;
 
   // Key.
-  ret = fwrite(segment.key.data(), segment.key_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment.key_size > 0) {
+    ret = fwrite(segment.key.data(), segment.key_size, 1, fp_);
+    PCHECK(ret == 1) << "Error writing segment ret=" << ret;
+  }
 
   // Val.
-  ret = fwrite(segment.val.data(), segment.val_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment.val_size > 0) {
+    ret = fwrite(segment.val.data(), segment.val_size, 1, fp_);
+    PCHECK(ret == 1) << "Error writing segment ret=" << ret;
+  }
 
   // Determine delete.
   ret = fwrite(&segment.delete_entry, sizeof(bool), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error writing segment ret=" << ret;
 
   return true;
 }
 
 void IOHandle::Flush() { PCHECK(fflush(fp_) == 0) << "error flushing"; }
 
-int IOHandle::InputOffset() const {
-  int pos = ftell(fp_);
+int64_t IOHandle::Offset() const {
+  int64_t pos = ftell(fp_);
   PCHECK(pos >= 0) << "Failed to get offset";
   return pos;
 }
 
-bool IOHandle::Eof() { return feof(fp_) != 0; }
+void IOHandle::Seek(int64_t offset) { fseek(fp_, offset, SEEK_SET); }
 
 }  // namespace diodb

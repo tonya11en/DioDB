@@ -41,17 +41,22 @@ class SSTable : public TableStats, public ReadableTable {
   virtual bool KeyExists(const Buffer& key) const override;
   inline bool KeyExists(const std::string&& key) const override {
     Buffer k(key.begin(), key.end());
-    return KeyExists(std::move(k));
+    return KeyExists(k);
   }
   virtual Buffer Get(const Buffer& key) const override;
   inline Buffer Get(const std::string&& key) const override {
     Buffer k(key.begin(), key.end());
-    return Get(std::move(k));
+    return Get(k);
   }
+
   virtual size_t Size() const override { return num_valid_entries(); }
 
+  // Verify SSTable invariants.
+  bool SanityCheck();
+
   // Accessors.
-  fs::path filepath() { return filepath_; }
+  fs::path filepath() const { return filepath_; }
+  size_t table_id() const { return table_id_; }
 
   // TODO: stats such as num_bytes..
 
@@ -66,6 +71,30 @@ class SSTable : public TableStats, public ReadableTable {
 
   // Returns the minimum key offset bytes for the sparse index.
   virtual off_t KeyIndexOffsetBytes() const;
+
+  // Takes a vector of existing SSTable files that are sorted chronologically
+  // (newest to oldest) and creates a new SSTable at 'filepath_' with the merged
+  // contents. The merge keeps the most recent version of any segment.
+  void MergeSSTables(const std::vector<SSTablePtr>& sstables);
+
+  // Batches up writes, such that identical keys are deduped and age
+  // priority is resolved. A call to Flush() is necessary to fully clear the
+  // batch.
+  void ResolveWrite(Segment&& segment, int age);
+
+  // Sync writes to disk.
+  void Flush();
+
+  // Finds a segment in the SSTable given a key and puts it in the provided
+  // segment reference. Returns true if one is found.
+  bool FindSegment(const Buffer& key, Segment* segment) const;
+
+  // Writes the remaining items in the segment cache in the correct order, while
+  // also keeping track of the age of each item.
+  void FinishSegmentCache(std::vector<std::shared_ptr<Segment>>& segment_cache);
+
+  // Accessor.
+  int32_t file_size() { return file_size_; }
 
  private:
   // Filepath of this SSTable.
@@ -83,6 +112,11 @@ class SSTable : public TableStats, public ReadableTable {
 
   // SSTable segment file controller.
   std::unique_ptr<IOHandle> io_handle_;
+
+  // Buffer maintained for resolving write batches during merge. Contains a
+  // segment and its age. Younger (lower number) sstables will replace old ones
+  // with the same key.
+  std::pair<Segment, int> merge_buffer_;
 };
 
 }  // namespace diodb
