@@ -294,8 +294,8 @@ TEST_F(SSTableTest, SSTableGetBasic) {
   Memtable memtable;
   memtable.Put("holy", "diver");
   memtable.Put("you", "been");
-  memtable.Put("gone", "too");
-  memtable.Put("long", "inthemidnightsea");
+  memtable.Erase("gone");
+  memtable.Erase("long");
   memtable.Lock();
 
   auto filename = GetTempFilename("SSTableGetBasic");
@@ -303,6 +303,8 @@ TEST_F(SSTableTest, SSTableGetBasic) {
 
   ASSERT_EQ(sstable.Get("holy"), String2Vec("diver"));
   ASSERT_EQ(sstable.Get("you"), String2Vec("been"));
+  ASSERT_FALSE(sstable.KeyExists("gone"));
+  ASSERT_FALSE(sstable.KeyExists("long"));
 
   CHECK(sstable.SanityCheck());
 }

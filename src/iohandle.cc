@@ -40,55 +40,54 @@ void IOHandle::ParseNext(Segment* segment) {
   CHECK(!End());
   CHECK(segment);
 
-  auto validate_return = [](const size_t ret, const int expected_val) {
-    PCHECK(ret == expected_val) << "Error reading segment ret=" << ret;
-  };
-
   // Key size.
   size_t ret = fread(&(segment->key_size), sizeof(uint32_t), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 
   // Val size.
   ret = fread(&(segment->val_size), sizeof(uint32_t), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 
   segment->key.resize(segment->key_size);
   segment->val.resize(segment->val_size);
 
   // Key.
-  ret = fread(segment->key.data(), segment->key_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment->key_size > 0) {
+    ret = fread(segment->key.data(), segment->key_size, 1, fp_);
+    PCHECK(ret == 1) << "Error reading segment ret=" << ret;
+  }
 
   // Val.
-  ret = fread(segment->val.data(), segment->val_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment->val_size > 0) {
+    ret = fread(segment->val.data(), segment->val_size, 1, fp_);
+    PCHECK(ret == 1) << "Error reading segment ret=" << ret;
+  }
 
   // Determine delete.
   ret = fread(&(segment->delete_entry), sizeof(bool), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error reading segment ret=" << ret;
 }
 
 bool IOHandle::SegmentWrite(const Segment& segment) {
-  // TODO: Do something with string_view.
-  auto validate_return = [](const size_t ret, const int expected_val) {
-    PCHECK(ret == expected_val) << "Error writing segment ret=" << ret;
-  };
-
   // Key and val size.
   size_t ret = fwrite(&segment.key_size, sizeof(uint32_t), 2, fp_);
-  validate_return(ret, 2);
+  PCHECK(ret == 2) << "Error writing segment ret=" << ret;
 
   // Key.
-  ret = fwrite(segment.key.data(), segment.key_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment.key_size > 0) {
+    ret = fwrite(segment.key.data(), segment.key_size, 1, fp_);
+    PCHECK(ret == 1) << "Error writing segment ret=" << ret;
+  }
 
   // Val.
-  ret = fwrite(segment.val.data(), segment.val_size, 1, fp_);
-  validate_return(ret, 1);
+  if (segment.val_size > 0) {
+    ret = fwrite(segment.val.data(), segment.val_size, 1, fp_);
+    PCHECK(ret == 1) << "Error writing segment ret=" << ret;
+  }
 
   // Determine delete.
   ret = fwrite(&segment.delete_entry, sizeof(bool), 1, fp_);
-  validate_return(ret, 1);
+  PCHECK(ret == 1) << "Error writing segment ret=" << ret;
 
   return true;
 }
