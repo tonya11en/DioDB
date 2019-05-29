@@ -19,14 +19,16 @@ bool Memtable::KeyExists(const Buffer& key) const {
   return false;
 }
 
-void Memtable::Put(const string& key, const string& val, const bool del) {
+bool Memtable::Put(const string& key, const string& val, const bool del) {
   Buffer key_buf(key.begin(), key.end());
   Buffer val_buf(val.begin(), val.end());
-  Put(move(key_buf), move(val_buf), del);
+  return Put(move(key_buf), move(val_buf), del);
 }
 
-void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
-  CHECK(!is_locked_);
+bool Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
+  if (is_locked_) {
+    return false;
+  }
 
   Segment segment(key, val, del);
 
@@ -40,6 +42,8 @@ void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
     memtable_map_.emplace(move(key), move(segment));
     ++mutable_num_valid_entries();
   }
+
+  return true;
 }
 
 Buffer Memtable::Get(const Buffer& key) const {

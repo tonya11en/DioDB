@@ -57,6 +57,19 @@ cc_library(
 )
 
 cc_library(
+  name = "db_ctl_lib",
+  srcs = ["db_controller.cc"],
+  hdrs = ["db_controller.h"],
+  deps = [
+    "@glog//:glog",
+    ":memtable_lib",
+    "@boost//:filesystem",
+  ],
+  copts = ["-std=c++17"],
+  visibility = ["//test:__pkg__", "//test/mocks:__pkg__"],
+)
+
+cc_library(
   name = "sstable_lib",
   srcs = ["sstable.cc"],
   hdrs = ["sstable.h"],

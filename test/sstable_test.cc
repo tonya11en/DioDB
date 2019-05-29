@@ -295,6 +295,7 @@ TEST_F(SSTableTest, SSTableGetBasic) {
   Memtable memtable;
   memtable.Put("holy", "diver");
   memtable.Put("you", "been");
+  memtable.Put("gone", "too");
   memtable.Erase("gone");
   memtable.Erase("long");
   memtable.Lock();

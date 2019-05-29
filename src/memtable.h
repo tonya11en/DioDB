@@ -30,8 +30,8 @@ class Memtable : public TableStats, public ReadableTable {
   virtual size_t Size() const override { return num_valid_entries(); }
 
   // Inserts a key/value pair into the memtable.
-  void Put(Buffer&& key, Buffer&& val, const bool del = false);
-  void Put(const std::string& key, const std::string& val,
+  bool Put(Buffer&& key, Buffer&& val, const bool del = false);
+  bool Put(const std::string& key, const std::string& val,
            const bool del = false);
 
   // Erases a key/value pair from the memtable.

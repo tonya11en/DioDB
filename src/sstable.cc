@@ -235,7 +235,11 @@ bool SSTable::KeyExists(const Buffer& key) const {
   // TODO: Bloom filter to speed this up. It's not really useful without it.
 
   Segment segment;
-  return FindSegment(key, &segment);
+  if (FindSegment(key, &segment)) {
+    return !segment->delete_entry;
+  }
+
+  return false;
 }
 
 bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
@@ -249,7 +253,7 @@ bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
     // Exact match in the sparse index.
     io_handle_->Seek(it->second);
     io_handle_->ParseNext(segment);
-    return !segment->delete_entry;
+    return true;
   } else if (it == sparse_index_.cbegin()) {
     // The index entry is guaranteed to evaluate greater than the key now, so
     // if it's the smallest item in the index, it's not a match.
@@ -261,16 +265,12 @@ bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
     io_handle_->ParseNext(segment);
-    if (segment->delete_entry) {
-      continue;
-    }
-
-    if (key < segment->key) {
+    if (segment->key == key) {
+      return true;
+    } else if (key < segment->key) {
       // It's impossible to encounter the key since the remaining values to
       // check will only be increasing.
       return false;
-    } else if (key == segment->key) {
-      return true;
     }
   }
 
