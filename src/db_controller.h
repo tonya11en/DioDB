@@ -3,6 +3,8 @@
 #include <thread>
 
 #include "buffer.h"
+#include "memtable.h"
+#include "sstable.h"
 
 namespace diodb {
 

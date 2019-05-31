@@ -132,7 +132,11 @@ void SSTable::MergeSSTables(const vector<SSTablePtr>& sstables) {
       }
     }
 
-    ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
+    // This is where we actually delete segments by not including them in the
+    // new, merged sstable.
+    if (!segment_cache[current_min_idx]->delete_entry) {
+      ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
+    }
     segment_cache[current_min_idx].reset();
   }
 
