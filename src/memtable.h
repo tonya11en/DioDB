@@ -17,15 +17,12 @@ class Memtable : public TableStats, public ReadableTable {
   ~Memtable() {}
 
   // ReadableTable.
-  virtual bool KeyExists(const Buffer& key) const override;
-  inline bool KeyExists(const std::string&& key) const override {
-    Buffer k(key.begin(), key.end());
-    return KeyExists(std::move(k));
-  }
+  virtual std::pair<bool, bool> DeletedKeyExists(
+      const Buffer& key) const override;
   virtual Buffer Get(const Buffer& key) const override;
-  inline Buffer Get(const std::string&& key) const override {
+  virtual Buffer Get(const std::string&& key) const {
     Buffer k(key.begin(), key.end());
-    return Get(std::move(k));
+    return Get(k);
   }
   virtual size_t Size() const override { return num_valid_entries(); }
 

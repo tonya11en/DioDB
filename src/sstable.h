@@ -38,13 +38,10 @@ class SSTable : public TableStats, public ReadableTable {
   virtual ~SSTable() {}
 
   // ReadableTable.
-  virtual bool KeyExists(const Buffer& key) const override;
-  inline bool KeyExists(const std::string&& key) const override {
-    Buffer k(key.begin(), key.end());
-    return KeyExists(k);
-  }
+  virtual std::pair<bool, bool> DeletedKeyExists(
+      const Buffer& key) const override;
   virtual Buffer Get(const Buffer& key) const override;
-  inline Buffer Get(const std::string&& key) const override {
+  virtual Buffer Get(const std::string&& key) const {
     Buffer k(key.begin(), key.end());
     return Get(k);
   }

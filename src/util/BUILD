@@ -1,7 +1,7 @@
 cc_library(
   name = "util_lib",
-  srcs = ["thread_pool.cc"],
-  hdrs = ["thread_pool.h"],
+  srcs = ["threadpool.cc"],
+  hdrs = ["threadpool.h"],
   deps = [
     "@glog//:glog",
   ],

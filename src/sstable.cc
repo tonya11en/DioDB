@@ -231,15 +231,15 @@ bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
   return true;
 }
 
-bool SSTable::KeyExists(const Buffer& key) const {
+std::pair<bool, bool> SSTable::DeletedKeyExists(const Buffer& key) const {
   // TODO: Bloom filter to speed this up. It's not really useful without it.
 
   Segment segment;
   if (FindSegment(key, &segment)) {
-    return !segment->delete_entry;
+    return make_pair(true, segment.delete_entry);
   }
 
-  return false;
+  return make_pair(false, false);
 }
 
 bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {

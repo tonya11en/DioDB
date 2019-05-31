@@ -11,10 +11,6 @@ class DBController {
   DBController(const fs::path db_directory);
   ~DBController() {}
 
-  // Flush the memtable into an SSTable and roll the existing SSTable into the
-  // base-level SSTable.
-  void RollTables();
-
   // Returns true if a key exists in the database.
   bool KeyExists(const Buffer& key) const;
 
@@ -28,6 +24,11 @@ class DBController {
   void Erase(Buffer&& key);
 
  private:
+  // Dump secondary memtable to an SSTable. Swap the active memtable and flush
+  // the full memtable into an SSTable.
+  void RollTables();
+
+  // Generate a unique 
 
  private:
   // The active memtable that services all I/O.
@@ -49,4 +50,4 @@ class DBController {
   threadpool::Threadpool threadpool_;
 };
 
-} // namespace diodb
+}  // namespace diodb
