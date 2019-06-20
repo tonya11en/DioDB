@@ -6,6 +6,7 @@ I just want to learn about building [LSM](https://en.wikipedia.org/wiki/Log-stru
 Currently, there's only a memtable and sstable implementation without the components being tied together to actually store keys and values in a persistent manner. The operations necessary for garbage collection and proper I/O are implemented, but there is no table manager scheduling the operations. There is also no write-ahead log yet.
 
 - [x] Memtable
+- [x] Disk I/O utilities
 - [x] SSTable
 - [x] Threadpool
 - [ ] Background compaction
