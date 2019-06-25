@@ -22,7 +22,7 @@ class SSTable : public TableStats, public ReadableTable {
   // Constructing an SSTable object with just a filename implies that we are
   // simply representing an SSTable file that already exists. If the file
   // indicated by 'sstable_path' DOES NOT exist, DiverDB will abort.
-  SSTable(const fs::path sstable_path);
+  explicit SSTable(const fs::path sstable_path);
 
   // Constructing an SSTable using a filename and a memtable implies we are
   // flushing the memtable to disk. The file indicated by 'new_sstable_path'
@@ -38,13 +38,10 @@ class SSTable : public TableStats, public ReadableTable {
   virtual ~SSTable() {}
 
   // ReadableTable.
-  virtual bool KeyExists(const Buffer& key) const override;
-  inline bool KeyExists(const std::string&& key) const override {
-    Buffer k(key.begin(), key.end());
-    return KeyExists(k);
-  }
+  virtual ReadableTable::DetailedKeyResponse DeletedKeyExists(
+      const Buffer& key) const override;
   virtual Buffer Get(const Buffer& key) const override;
-  inline Buffer Get(const std::string&& key) const override {
+  virtual Buffer Get(const std::string&& key) const {
     Buffer k(key.begin(), key.end());
     return Get(k);
   }

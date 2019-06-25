@@ -67,7 +67,9 @@ SSTable::SSTable(const fs::path new_sstable_path,
 
   string parent_paths;
   for (const auto& sst : sstables) {
-    parent_paths.append(sst->filepath().generic_string() + ", ");
+    const string parent_path = sst->filepath().generic_string() + ", ";
+    DLOG(INFO) << "Adding parent path " << parent_path;
+    parent_paths.append(parent_path);
   }
   LOG(INFO) << "Merging parent SSTables " << parent_paths << "into "
             << filepath_ << " with id=" << table_id_;
@@ -132,7 +134,11 @@ void SSTable::MergeSSTables(const vector<SSTablePtr>& sstables) {
       }
     }
 
-    ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
+    // This is where we actually delete segments by not including them in the
+    // new, merged sstable.
+    if (!segment_cache[current_min_idx]->delete_entry) {
+      ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
+    }
     segment_cache[current_min_idx].reset();
   }
 
@@ -231,11 +237,21 @@ bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
   return true;
 }
 
-bool SSTable::KeyExists(const Buffer& key) const {
+ReadableTable::DetailedKeyResponse SSTable::DeletedKeyExists(const Buffer& key) const {
   // TODO: Bloom filter to speed this up. It's not really useful without it.
 
+  ReadableTable::DetailedKeyResponse ret;
+
   Segment segment;
-  return FindSegment(key, &segment);
+  if (FindSegment(key, &segment)) {
+    ret.exists = true;
+    ret.is_deleted = segment.delete_entry;
+  } else {
+    ret.exists = false;
+    ret.is_deleted = false;
+  }
+
+  return ret;
 }
 
 bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
@@ -249,7 +265,7 @@ bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
     // Exact match in the sparse index.
     io_handle_->Seek(it->second);
     io_handle_->ParseNext(segment);
-    return !segment->delete_entry;
+    return true;
   } else if (it == sparse_index_.cbegin()) {
     // The index entry is guaranteed to evaluate greater than the key now, so
     // if it's the smallest item in the index, it's not a match.
@@ -261,16 +277,12 @@ bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
   io_handle_->Seek(it->second);
   while (!io_handle_->End()) {
     io_handle_->ParseNext(segment);
-    if (segment->delete_entry) {
-      continue;
-    }
-
-    if (key < segment->key) {
+    if (segment->key == key) {
+      return true;
+    } else if (key < segment->key) {
       // It's impossible to encounter the key since the remaining values to
       // check will only be increasing.
       return false;
-    } else if (key == segment->key) {
-      return true;
     }
   }
 

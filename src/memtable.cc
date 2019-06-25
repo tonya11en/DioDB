@@ -12,21 +12,29 @@ namespace diodb {
 
 Memtable::Memtable() : is_locked_(false) {}
 
-bool Memtable::KeyExists(const Buffer& key) const {
+ReadableTable::DetailedKeyResponse Memtable::DeletedKeyExists(const Buffer& key) const {
+  ReadableTable::DetailedKeyResponse ret;
   if (memtable_map_.count(key) > 0) {
-    return !memtable_map_.at(key).delete_entry;
+    ret.exists = true;
+    ret.is_deleted = memtable_map_.at(key).delete_entry;
+  } else {
+    ret.exists = false;
+    ret.is_deleted = false;
   }
-  return false;
+
+  return ret;
 }
 
-void Memtable::Put(const string& key, const string& val, const bool del) {
+bool Memtable::Put(const string& key, const string& val, const bool del) {
   Buffer key_buf(key.begin(), key.end());
   Buffer val_buf(val.begin(), val.end());
-  Put(move(key_buf), move(val_buf), del);
+  return Put(move(key_buf), move(val_buf), del);
 }
 
-void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
-  CHECK(!is_locked_);
+bool Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
+  if (is_locked_) {
+    return false;
+  }
 
   Segment segment(key, val, del);
 
@@ -40,6 +48,8 @@ void Memtable::Put(Buffer&& key, Buffer&& val, const bool del) {
     memtable_map_.emplace(move(key), move(segment));
     ++mutable_num_valid_entries();
   }
+
+  return true;
 }
 
 Buffer Memtable::Get(const Buffer& key) const {
@@ -49,11 +59,13 @@ Buffer Memtable::Get(const Buffer& key) const {
   return memtable_map_.at(key).val;
 }
 
-void Memtable::Erase(Buffer&& key) {
-  CHECK(!is_locked_);
+bool Memtable::Erase(Buffer&& key) {
+  if (is_locked_) {
+    return false;
+  }
 
   if (memtable_map_.count(key) > 0 && memtable_map_[key].delete_entry) {
-    return;
+    return true;
   } else if (memtable_map_.count(key) > 0 && !memtable_map_[key].delete_entry) {
     memtable_map_[key].delete_entry = true;
   } else if (memtable_map_.count(key) == 0) {
@@ -63,6 +75,7 @@ void Memtable::Erase(Buffer&& key) {
 
   --mutable_num_valid_entries();
   ++mutable_num_delete_entries();
+  return true;
 }
 
 }  // namespace diodb

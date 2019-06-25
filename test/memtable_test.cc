@@ -36,7 +36,7 @@ TEST_F(MemtableTest, TestKeyExistsBasic) {
 TEST_F(MemtableTest, TestMemtableLocking) {
   memtable_.Put("testkey1", "testval1");
   memtable_.Lock();
-  ASSERT_DEATH({ memtable_.Put("foo", "bar"); }, "is_locked");
+  EXPECT_FALSE(memtable_.Put("foo", "bar"));
 }
 
 TEST_F(MemtableTest, TestMemtableStats) {
