@@ -89,7 +89,11 @@ void DBController::RollTables() {
   threadpool_.Enqueue(move(roller));
 }
 
-bool DBController::KeyExistsAction(const Buffer& key) const {
+// TODO: Refactor the functions to make use of the ReadableTable abstraction.
+// Perhaps a single vector of readable tables. There is way too much code
+// repeated in KeyExists and Get.
+
+bool DBController::KeyExists(const Buffer& key) const {
   auto key_info = primary_memtable_->DeletedKeyExists(key);
   if (key_info.exists) {
     return !key_info.is_deleted;
@@ -110,6 +114,38 @@ bool DBController::KeyExistsAction(const Buffer& key) const {
   }
 
   return false;
+}
+
+Buffer DBController::Get(const Buffer& key) const {
+  // In the event that SSTable merges are occuring at the same time this call is
+  // being made, only swaps with newer tables will occur while reads are making
+  // their way through the table hierarchy.
+  auto key_info = primary_memtable_->DeletedKeyExists(key);
+  if (key_info.exists && key_info.is_deleted) {
+    return Buffer();
+  } else if (key_info.exists) {
+    return primary_memtable_->Get(key);
+  }
+
+  key_info = secondary_memtable_->DeletedKeyExists(key);
+  if (key_info.exists && key_info.is_deleted) {
+    return Buffer();
+  } else if (key_info.exists) {
+    return secondary_memtable_->Get(key);
+  }
+
+  // Iterator is valid for objects that are swapped, so background tasks should
+  // not interfere with this.
+  for (const auto& sst : primary_sstables_) {
+    key_info = sst->DeletedKeyExists(key);
+    if (key_info.exists && key_info.is_deleted) {
+      return Buffer();
+    } else if (key_info.exists) {
+      return sst->Get(key);
+    }
+  }
+
+  return Buffer();
 }
 
 void DBController::Put(Buffer&& key, Buffer&& val) {

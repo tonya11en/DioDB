@@ -15,17 +15,15 @@ class DBController {
   virtual ~DBController() {}
 
   // Returns true if a key exists in the database.
-  bool KeyExistsAction(const Buffer& key) const;
+  bool KeyExists(const Buffer& key) const;
 
   // Get the value associated with a key.
-  // TODO
   Buffer Get(const Buffer& key) const;
 
   // Inserts a key/value pair into the database.
   void Put(Buffer&& key, Buffer&& val);
 
   // Erases a key/value pair from the database.
-  // TODO
   void Erase(Buffer&& key);
 
  private:
