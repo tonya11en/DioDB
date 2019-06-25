@@ -9,7 +9,7 @@ Currently, there's only a memtable and sstable implementation without the compon
 - [x] Disk I/O utilities
 - [x] SSTable
 - [x] Threadpool
-- [ ] Background compaction
+- [x] Background compaction
 - [ ] End-to-end integration test
 
 Upon completion of a full integration test, I'd like to begin benchmarking and ripping out bottlenecks. I'll almost certainly need bloom filters (or some other AMQ structure) in front of the SSTables. Beyond that, I'd like to experiment with SPDK and measure the impact on performance. I'd also like to implement some kind of correctness test, but I don't know what I don't know about that area quite yet.
