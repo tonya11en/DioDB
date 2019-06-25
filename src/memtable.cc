@@ -59,11 +59,13 @@ Buffer Memtable::Get(const Buffer& key) const {
   return memtable_map_.at(key).val;
 }
 
-void Memtable::Erase(Buffer&& key) {
-  CHECK(!is_locked_);
+bool Memtable::Erase(Buffer&& key) {
+  if (is_locked_) {
+    return false;
+  }
 
   if (memtable_map_.count(key) > 0 && memtable_map_[key].delete_entry) {
-    return;
+    return true;
   } else if (memtable_map_.count(key) > 0 && !memtable_map_[key].delete_entry) {
     memtable_map_[key].delete_entry = true;
   } else if (memtable_map_.count(key) == 0) {
@@ -73,6 +75,7 @@ void Memtable::Erase(Buffer&& key) {
 
   --mutable_num_valid_entries();
   ++mutable_num_delete_entries();
+  return true;
 }
 
 }  // namespace diodb

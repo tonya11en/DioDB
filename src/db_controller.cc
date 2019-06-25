@@ -75,10 +75,14 @@ void DBController::RollTables() {
   fs::rename("lvl_0.diodb.secondary", "lvl_0.diodb");
   fs::rename("lvl_base.diodb.secondary", "lvl_base.diodb");
 
-  // We want to guarantee that the minimum time has passed before scheduling a
-  // new 
+  // Guarantee that the minimum time has passed before scheduling the next
+  // rollover.
+  //
+  // An assumption is made here that a negative time duration passed into the
+  // 'sleep_for' function won't break anything.
+  //
+  // TODO: Add a delayed enqueue function to the threadpool.
   const auto elapsed_time = chrono::system_clock::now() - start_time;
-
   this_thread::sleep_for(
     chrono::seconds(FLAGS_background_task_min_gap_secs) - elapsed_time);
   Threadpool::Job roller = [this]() { this->RollTables(); };
@@ -112,7 +116,17 @@ void DBController::Put(Buffer&& key, Buffer&& val) {
   // The memtable might be locked because it's about to be swapped with the
   // secondary memtable and flushed. Keep retrying until the primary memtable is
   // not locked.
+  //
+  // Note: This is not expected to loop for very long, because at the time of
+  // writing, the creation of a new memtable takes a negligible amount of time.
+  // If that changes, this will cause CPU spikes during table merges.
   while (!primary_memtable_->Put(move(key), move(val))) {
+  }
+}
+
+void DBController::Erase(Buffer&& key) {
+  // See comment block in DBController::Put().
+  while (!primary_memtable_->Erase(move(key))) {
   }
 }
 

@@ -26,16 +26,16 @@ class Memtable : public TableStats, public ReadableTable {
   }
   virtual size_t Size() const override { return num_valid_entries(); }
 
-  // Inserts a key/value pair into the memtable.
+  // Inserts a key/value pair into the memtable. Returns true if successful.
   bool Put(Buffer&& key, Buffer&& val, const bool del = false);
   bool Put(const std::string& key, const std::string& val,
            const bool del = false);
 
-  // Erases a key/value pair from the memtable.
-  void Erase(Buffer&& key);
-  void Erase(const std::string&& key) {
+  // Erases a key/value pair from the memtable. Returns true if successful.
+  bool Erase(Buffer&& key);
+  bool Erase(const std::string&& key) {
     Buffer k(key.begin(), key.end());
-    Erase(std::move(k));
+    return Erase(std::move(k));
   }
 
   // Locks the memtable, rendering it immutable.
