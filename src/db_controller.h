@@ -14,6 +14,9 @@ class DBController {
   DBController(const fs::path db_directory);
   virtual ~DBController() {}
 
+  // Begins the background tasks and renders the controller useable.
+  void Start();
+
   // Returns true if a key exists in the database.
   bool KeyExists(const Buffer& key) const;
 
@@ -32,6 +35,9 @@ class DBController {
   void RollTables();
 
  private:
+  // Indicates whether the controller is useable.
+  bool started_;
+
   // The active memtable that services all I/O.
   std::unique_ptr<Memtable> primary_memtable_;
 
@@ -48,7 +54,7 @@ class DBController {
   std::vector<SSTable::SSTablePtr> secondary_sstables_;
 
   // Thread pool that executes all the tasks.
-  threadpool::Threadpool threadpool_;
+  util::Threadpool threadpool_;
 };
 
 }  // namespace diodb

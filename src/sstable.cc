@@ -67,7 +67,9 @@ SSTable::SSTable(const fs::path new_sstable_path,
 
   string parent_paths;
   for (const auto& sst : sstables) {
-    parent_paths.append(sst->filepath().generic_string() + ", ");
+    const string parent_path = sst->filepath().generic_string() + ", ";
+    DLOG(INFO) << "Adding parent path " << parent_path;
+    parent_paths.append(parent_path);
   }
   LOG(INFO) << "Merging parent SSTables " << parent_paths << "into "
             << filepath_ << " with id=" << table_id_;

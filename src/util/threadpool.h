@@ -9,7 +9,7 @@
 #include <thread>
 #include <vector>
 
-namespace threadpool {
+namespace util {
 
 class Threadpool {
  public:
@@ -54,4 +54,4 @@ class Threadpool {
   static void Toil(const int thread_idx, std::shared_ptr<Worker> worker);
 };
 
-}  // namespace threadpool
+}  // namespace util

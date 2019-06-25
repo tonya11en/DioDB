@@ -6,14 +6,16 @@
 #include "buffer.h"
 #include "db_controller.h"
 #include "memtable.h"
+#include "util/scoped_executor.h"
 
 using namespace std;
 namespace fs = boost::filesystem;
 
-using threadpool::Threadpool;
+using util::ScopedExecutor;
+using util::Threadpool;
 
-DEFINE_int32(background_task_min_gap_secs, 5,
-             "Minimum number of seconds between background tasks"
+DEFINE_int32(background_task_min_gap_msecs, 1000,
+             "Minimum number of milliseconds between background tasks"
              "are triggered.");
 
 DEFINE_int32(num_worker_threads, 0,
@@ -23,23 +25,50 @@ DEFINE_int32(num_worker_threads, 0,
 namespace diodb {
 
 DBController::DBController(const fs::path db_directory)
-    : primary_memtable_(make_unique<Memtable>()),
+    : started_(false),
+      primary_memtable_(make_unique<Memtable>()),
       secondary_memtable_(make_unique<Memtable>()),
       threadpool_(FLAGS_num_worker_threads < 1 ? thread::hardware_concurrency()
                                                : FLAGS_num_worker_threads) {
   // The secondary memtable should never be unlocked. It's immutable.
   secondary_memtable_->Lock();
 
-  LOG(INFO) << "Starting DB controller with concurrency "
+  LOG(INFO) << "Creating DB controller with concurrency "
             << threadpool_.num_threads();
+}
+
+void DBController::Start() {
+  LOG(INFO) << "Starting DB controller";
+
+  // Start the background merging thread.
+  threadpool_.Enqueue([this](){ this->RollTables(); });
+  started_ = true;
 }
 
 void DBController::RollTables() {
   CHECK(secondary_memtable_->is_locked());
   CHECK_EQ(secondary_sstables_.size(), 0);
+
   LOG(INFO) << "Performing table merge";
 
   const auto start_time = chrono::system_clock::now();
+
+  const int32_t gap_msec = FLAGS_background_task_min_gap_msecs;
+  const auto fn = [this, start_time, gap_msec]() {
+    // Guarantee that the minimum time has passed before scheduling the next
+    // rollover.
+    //
+    // An assumption is made here that a negative time duration passed into the
+    // 'sleep_for' function won't break anything.
+    //
+    // TODO: Add a delayed enqueue function to the threadpool.
+    const auto elapsed_time = chrono::system_clock::now() - start_time;
+    this_thread::sleep_for(
+      chrono::milliseconds(gap_msec) - elapsed_time);
+    Threadpool::Job roller = [this]() { this->RollTables(); };
+    this->threadpool_.Enqueue(move(roller));
+  };
+  const ScopedExecutor se(fn);
 
   // There's no point in rolling if the primary memtable is empty.
   if (primary_memtable_->Size() == 0) {
@@ -74,19 +103,6 @@ void DBController::RollTables() {
   fs::remove("lvl_base.diodb");
   fs::rename("lvl_0.diodb.secondary", "lvl_0.diodb");
   fs::rename("lvl_base.diodb.secondary", "lvl_base.diodb");
-
-  // Guarantee that the minimum time has passed before scheduling the next
-  // rollover.
-  //
-  // An assumption is made here that a negative time duration passed into the
-  // 'sleep_for' function won't break anything.
-  //
-  // TODO: Add a delayed enqueue function to the threadpool.
-  const auto elapsed_time = chrono::system_clock::now() - start_time;
-  this_thread::sleep_for(
-    chrono::seconds(FLAGS_background_task_min_gap_secs) - elapsed_time);
-  Threadpool::Job roller = [this]() { this->RollTables(); };
-  threadpool_.Enqueue(move(roller));
 }
 
 // TODO: Refactor the functions to make use of the ReadableTable abstraction.
@@ -94,6 +110,8 @@ void DBController::RollTables() {
 // repeated in KeyExists and Get.
 
 bool DBController::KeyExists(const Buffer& key) const {
+  CHECK(started_);
+
   auto key_info = primary_memtable_->DeletedKeyExists(key);
   if (key_info.exists) {
     return !key_info.is_deleted;
@@ -117,6 +135,8 @@ bool DBController::KeyExists(const Buffer& key) const {
 }
 
 Buffer DBController::Get(const Buffer& key) const {
+  CHECK(started_);
+
   // In the event that SSTable merges are occuring at the same time this call is
   // being made, only swaps with newer tables will occur while reads are making
   // their way through the table hierarchy.
@@ -149,6 +169,8 @@ Buffer DBController::Get(const Buffer& key) const {
 }
 
 void DBController::Put(Buffer&& key, Buffer&& val) {
+  CHECK(started_);
+
   // The memtable might be locked because it's about to be swapped with the
   // secondary memtable and flushed. Keep retrying until the primary memtable is
   // not locked.
@@ -161,6 +183,8 @@ void DBController::Put(Buffer&& key, Buffer&& val) {
 }
 
 void DBController::Erase(Buffer&& key) {
+  CHECK(started_);
+
   // See comment block in DBController::Put().
   while (!primary_memtable_->Erase(move(key))) {
   }

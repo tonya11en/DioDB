@@ -8,7 +8,7 @@
 
 #include "threadpool.h"
 
-namespace threadpool {
+namespace util {
 
 Threadpool::Threadpool(const int num_threads)
     : num_threads_(num_threads), distribution_(0, num_threads_ - 1) {
@@ -55,4 +55,4 @@ std::shared_ptr<Threadpool::Worker> Threadpool::Select() {
   return workers_[distribution_(generator_)];
 }
 
-}  // namespace threadpool
+}  // namespace util
