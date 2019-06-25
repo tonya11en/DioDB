@@ -55,15 +55,18 @@ void DBController::RollTables() {
   // Secondary memtable to new sstable.
   if (secondary_memtable_->Size() > 0) {
     LOG(INFO) << "Dumping secondary memtable to disk";
-    secondary_sstables_.emplace_back(
-      fs::path("lvl_0.diodb.secondary"), secondary_memtable_);
+    auto sst = make_shared<SSTable>(fs::path("lvl_0.diodb.secondary"),
+                                    *secondary_memtable_);
+    secondary_sstables_.emplace_back(move(sst));
   }
   
   // Merge existing primary sstables.
   LOG(INFO) << "Merging primary sstables";
-  secondary_sstables_.emplace_back("lvl_base.diodb.secondary", primary_sstables_);
+  auto secondary_sst =
+    make_shared<SSTable>("lvl_base.diodb.secondary", primary_sstables_);
+  secondary_sstables_.emplace_back(std::move(secondary_sst));
 
-  swap(primary_sstables_, secondary_sstables_)
+  swap(primary_sstables_, secondary_sstables_);
 
   fs::remove("lvl_0.diodb");
   fs::remove("lvl_base.diodb");
@@ -72,8 +75,8 @@ void DBController::RollTables() {
 
   std::this_thread::sleep_for(
     std::chrono::seconds(FLAGS_background_task_min_gap_secs));
-  Threadpool::Job roller = [this]() { this->RollTables(); }
-  threadpool_.Enqueue(roller);
+  Threadpool::Job roller = [this]() { this->RollTables(); };
+  threadpool_.Enqueue(move(roller));
 }
 
 bool DBController::KeyExistsAction(const Buffer& key) const {
@@ -95,13 +98,15 @@ bool DBController::KeyExistsAction(const Buffer& key) const {
       return !p.second;
     }
   }
+
+  return false;
 }
 
 void DBController::Put(Buffer&& key, Buffer&& val) {
   // The memtable might be locked because it's about to be swapped with the
   // secondary memtable and flushed. Keep retrying until the primary memtable is
   // not locked.
-  while (!primary_memtable_->Put(key, val)) {
+  while (!primary_memtable_->Put(move(key), move(val))) {
   }
 }
 

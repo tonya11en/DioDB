@@ -65,6 +65,7 @@ cc_library(
     ":memtable_lib",
     ":sstable_lib",
     "@boost//:filesystem",
+    "//src/util:util_lib",
   ],
   copts = ["-std=c++17"],
   visibility = ["//test:__pkg__", "//test/mocks:__pkg__"],

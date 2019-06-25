@@ -6,4 +6,5 @@ cc_library(
     "@glog//:glog",
   ],
   copts = ["-std=c++17"],
+  visibility = ["//src:__pkg__"],
 )

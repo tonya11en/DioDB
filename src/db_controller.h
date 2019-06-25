@@ -5,32 +5,33 @@
 #include "buffer.h"
 #include "memtable.h"
 #include "sstable.h"
+#include "util/threadpool.h"
 
 namespace diodb {
 
 class DBController {
  public:
   DBController(const fs::path db_directory);
-  ~DBController() {}
+  virtual ~DBController() {}
 
   // Returns true if a key exists in the database.
-  bool KeyExists(const Buffer& key) const;
+  bool KeyExistsAction(const Buffer& key) const;
 
   // Get the value associated with a key.
+  // TODO
   Buffer Get(const Buffer& key) const;
 
   // Inserts a key/value pair into the database.
   void Put(Buffer&& key, Buffer&& val);
 
   // Erases a key/value pair from the database.
+  // TODO
   void Erase(Buffer&& key);
 
  private:
   // Dump secondary memtable to an SSTable. Swap the active memtable and flush
   // the full memtable into an SSTable.
   void RollTables();
-
-  // Generate a unique 
 
  private:
   // The active memtable that services all I/O.

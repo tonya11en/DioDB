@@ -14,7 +14,7 @@ namespace diodb {
 class Memtable : public TableStats, public ReadableTable {
  public:
   Memtable();
-  ~Memtable() {}
+  virtual ~Memtable() {}
 
   // ReadableTable.
   virtual std::pair<bool, bool> DeletedKeyExists(
