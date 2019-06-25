@@ -38,7 +38,7 @@ class SSTable : public TableStats, public ReadableTable {
   virtual ~SSTable() {}
 
   // ReadableTable.
-  virtual std::pair<bool, bool> DeletedKeyExists(
+  virtual ReadableTable::DetailedKeyResponse DeletedKeyExists(
       const Buffer& key) const override;
   virtual Buffer Get(const Buffer& key) const override;
   virtual Buffer Get(const std::string&& key) const {

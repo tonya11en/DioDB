@@ -11,18 +11,25 @@ class ReadableTable {
  public:
   // Returns true if the given key exists.
   virtual bool KeyExists(const Buffer& key) const {
-    Buffer k(key.begin(), key.end());
-    const auto p = DeletedKeyExists(key);
-    return p.first ? !p.second : false;
+    DetailedKeyResponse r = DeletedKeyExists(key);
+    return r.exists ? !r.is_deleted : false;
   }
   virtual bool KeyExists(const std::string&& key) const {
     Buffer k(key.begin(), key.end());
     return KeyExists(k);
   }
 
-  // Returns a pair indicating whether a key exists and if found, whether the
+  // Returns struct indicating whether a key exists and if found, whether the
   // key is a delete entry.
-  virtual std::pair<bool, bool> DeletedKeyExists(const Buffer& key) const = 0;
+  typedef struct DetailedKeyResponse {
+    // True if the key is found. However, the delete flag could potentially be
+    // set.
+    bool exists;
+
+    // True if the delete flag is set for a key.
+    bool is_deleted;
+  } DetailedKeyResponse;
+  virtual DetailedKeyResponse DeletedKeyExists(const Buffer& key) const = 0;
 
   // Gets the value associated with a particular key.
   virtual Buffer Get(const Buffer& key) const = 0;

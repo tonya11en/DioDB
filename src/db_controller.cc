@@ -39,6 +39,8 @@ void DBController::RollTables() {
   CHECK_EQ(secondary_sstables_.size(), 0);
   LOG(INFO) << "Performing table merge";
 
+  const auto start_time = chrono::system_clock::now();
+
   // There's no point in rolling if the primary memtable is empty.
   if (primary_memtable_->Size() == 0) {
     LOG(INFO) << "Primary memtable is empty- won't merge";
@@ -64,7 +66,7 @@ void DBController::RollTables() {
   LOG(INFO) << "Merging primary sstables";
   auto secondary_sst =
     make_shared<SSTable>("lvl_base.diodb.secondary", primary_sstables_);
-  secondary_sstables_.emplace_back(std::move(secondary_sst));
+  secondary_sstables_.emplace_back(move(secondary_sst));
 
   swap(primary_sstables_, secondary_sstables_);
 
@@ -73,29 +75,33 @@ void DBController::RollTables() {
   fs::rename("lvl_0.diodb.secondary", "lvl_0.diodb");
   fs::rename("lvl_base.diodb.secondary", "lvl_base.diodb");
 
-  std::this_thread::sleep_for(
-    std::chrono::seconds(FLAGS_background_task_min_gap_secs));
+  // We want to guarantee that the minimum time has passed before scheduling a
+  // new 
+  const auto elapsed_time = chrono::system_clock::now() - start_time;
+
+  this_thread::sleep_for(
+    chrono::seconds(FLAGS_background_task_min_gap_secs) - elapsed_time);
   Threadpool::Job roller = [this]() { this->RollTables(); };
   threadpool_.Enqueue(move(roller));
 }
 
 bool DBController::KeyExistsAction(const Buffer& key) const {
-  auto p = primary_memtable_->DeletedKeyExists(key);
-  if (p.first) {
-    return !p.second;
+  auto key_info = primary_memtable_->DeletedKeyExists(key);
+  if (key_info.exists) {
+    return !key_info.is_deleted;
   }
 
-  p = secondary_memtable_->DeletedKeyExists(key);
-  if (p.first) {
-    return !p.second;
+  key_info = secondary_memtable_->DeletedKeyExists(key);
+  if (key_info.exists) {
+    return !key_info.is_deleted;
   }
 
   // Iterator is valid for objects that are swapped, so background tasks should
   // not interfere with this.
   for (const auto& sst : primary_sstables_) {
-    p = sst->DeletedKeyExists(key);
-    if (p.first) {
-      return !p.second;
+    key_info = sst->DeletedKeyExists(key);
+    if (key_info.exists) {
+      return !key_info.is_deleted;
     }
   }
 

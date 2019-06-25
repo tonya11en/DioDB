@@ -12,11 +12,17 @@ namespace diodb {
 
 Memtable::Memtable() : is_locked_(false) {}
 
-std::pair<bool, bool> Memtable::DeletedKeyExists(const Buffer& key) const {
+ReadableTable::DetailedKeyResponse Memtable::DeletedKeyExists(const Buffer& key) const {
+  ReadableTable::DetailedKeyResponse ret;
   if (memtable_map_.count(key) > 0) {
-    return make_pair(true, memtable_map_.at(key).delete_entry);
+    ret.exists = true;
+    ret.is_deleted = memtable_map_.at(key).delete_entry;
+  } else {
+    ret.exists = false;
+    ret.is_deleted = false;
   }
-  return make_pair(false, false);
+
+  return ret;
 }
 
 bool Memtable::Put(const string& key, const string& val, const bool del) {

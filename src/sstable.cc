@@ -235,15 +235,21 @@ bool SSTable::FlushMemtable(const fs::path& new_sstable_path,
   return true;
 }
 
-std::pair<bool, bool> SSTable::DeletedKeyExists(const Buffer& key) const {
+ReadableTable::DetailedKeyResponse SSTable::DeletedKeyExists(const Buffer& key) const {
   // TODO: Bloom filter to speed this up. It's not really useful without it.
+
+  ReadableTable::DetailedKeyResponse ret;
 
   Segment segment;
   if (FindSegment(key, &segment)) {
-    return make_pair(true, segment.delete_entry);
+    ret.exists = true;
+    ret.is_deleted = segment.delete_entry;
+  } else {
+    ret.exists = false;
+    ret.is_deleted = false;
   }
 
-  return make_pair(false, false);
+  return ret;
 }
 
 bool SSTable::FindSegment(const Buffer& key, Segment* segment) const {
