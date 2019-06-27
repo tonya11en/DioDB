@@ -14,9 +14,18 @@ Threadpool::Threadpool(const int num_threads)
     : num_threads_(num_threads), distribution_(0, num_threads_ - 1) {
   for (int ii = 0; ii < num_threads_; ++ii) {
     auto w = std::make_shared<Worker>();
+    w->rage_quit = false;
     workers_.emplace_back(w);
     workers_[ii]->wthread =
         std::move(std::thread(&Threadpool::Toil, ii, workers_[ii]));
+  }
+}
+
+Threadpool::~Threadpool() {
+  for (auto& work : workers_) {
+    work->rage_quit = true;
+    work->cv.notify_one();
+    work->wthread.join();
   }
 }
 
@@ -30,7 +39,7 @@ void Threadpool::Enqueue(Job&& fn) {
 }
 
 void Threadpool::Toil(const int thread_idx, std::shared_ptr<Worker> worker) {
-  while (true) {
+  while (!worker->rage_quit) {
     Job job;
     {
       std::unique_lock<std::mutex> lock(worker->mtx);

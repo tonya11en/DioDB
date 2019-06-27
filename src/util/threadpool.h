@@ -1,6 +1,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -16,7 +17,7 @@ class Threadpool {
   typedef std::function<void()> Job;
 
   explicit Threadpool(const int num_threads);
-  ~Threadpool() {}
+  ~Threadpool();
 
   // Queue up work for execution.
   void Enqueue(Job&& fn);
@@ -36,6 +37,9 @@ class Threadpool {
 
     // The work queue for this worker.
     std::queue<Job> workq;
+
+    // If true, the thread will stop toiling.
+    std::atomic<bool> rage_quit;
   } Worker;
   std::vector<std::shared_ptr<Worker>> workers_;
 
