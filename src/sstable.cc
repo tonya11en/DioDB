@@ -82,109 +82,72 @@ SSTable::SSTable(const fs::path new_sstable_path,
 }
 
 void SSTable::MergeSSTables(const vector<SSTablePtr>& sstables) {
-  // Build new IOHandles for the parent SSTs.
+  // Build new IOHandles for the parent SSTs and count up the segments that need to be merged.
   vector<IOHandle> parent_sst_handles_;
   parent_sst_handles_.reserve(sstables.size());
   for (const auto& sst : sstables) {
     parent_sst_handles_.emplace_back(sst->filepath());
   }
 
-  // The segment cache maps the index of the parent SST to the last object read
-  // from it that was not yet written to disk. The parent SST vector index
-  // corresponds with the cache's index.
-  vector<shared_ptr<Segment>> segment_cache(sstables.size());
-  function<bool(const shared_ptr<Segment> s)> cache_empty =
-      [](const shared_ptr<Segment> p) { return p == nullptr; };
+  using AgedSegment = pair<Segment, uint32_t>;
+  set<AgedSegment> segment_queue;
 
-  auto ssts_exhausted = [&parent_sst_handles_]() -> bool {
-    for (int ii = 0; ii < parent_sst_handles_.size(); ++ii) {
-      if (!parent_sst_handles_.at(ii).End()) {
-        return false;
-      }
+  auto load_queue = [&segment_queue](uint32_t age, IOHandle& h) {
+    if (h.End()) {
+      // Already at the end of the file.
+      return;
     }
-    return true;
+
+    Segment segment;
+    h.ParseNext(&segment);
+    auto success = segment_queue.emplace(move(segment), age);
+    CHECK(success.second);
   };
 
-  // Perform the merge.
-  //
-  // TODO: This could be micro-optimized to avoid multiple evaluations, but
-  //       right now the focus is on correctness.
-  while (!ssts_exhausted()) {
-    // The index containing the segment whose key evaluates as the minimum.
-    int current_min_idx = 0;
-    for (int idx = 0; idx < parent_sst_handles_.size(); ++idx) {
-      IOHandle& h = parent_sst_handles_.at(idx);
-      if (segment_cache[idx] == nullptr && h.End()) {
-        continue;
-      }
-
-      // We're not at the end of the file, so read from disk and opulate the
-      // cache if it's empty. We only write to disk from the cache.
-      if (segment_cache[idx] == nullptr) {
-        CHECK(!h.End());
-        auto segment = make_shared<Segment>();
-        h.ParseNext(segment.get());
-        segment_cache[idx] = move(segment);
-      }
-
-      CHECK(segment_cache[current_min_idx]);
-      CHECK(segment_cache[idx]);
-      if (segment_cache[current_min_idx]->key > segment_cache[idx]->key) {
-        current_min_idx = idx;
-      }
-    }
-
-    // This is where we actually delete segments by not including them in the
-    // new, merged sstable.
-    if (!segment_cache[current_min_idx]->delete_entry) {
-      ResolveWrite(move(*segment_cache[current_min_idx]), current_min_idx);
-    }
-    segment_cache[current_min_idx].reset();
+  // Run through each SSTable and populate the segment queue with its first entry.
+  for (int idx = 0; idx < parent_sst_handles_.size(); ++idx) {
+    IOHandle& h = parent_sst_handles_.at(idx);
+    load_queue(idx, h);
   }
 
-  // There's nothing left to read from file. Merge the remainder of the segment
-  // cache.
-  FinishSegmentCache(segment_cache);
+  // Perform the merge.
+  while (!segment_queue.empty()) {
+    const uint32_t age = segment_queue.begin()->second;
+    auto segment = segment_queue.begin()->first;
+    ResolveWrite(move(segment), age);
+    segment_queue.erase(segment_queue.begin());
+
+    // Pull the next segment from the sstable we just resolved a write from.
+    IOHandle& h = parent_sst_handles_.at(age);
+    load_queue(age, h);
+  }
+
+  // There's nothing left to read from file. Merge the final item in the merge buffer by resolving a
+  // write with a bogus segment.
+  ResolveWrite(Segment(), 1337);
 
   Flush();
   file_size_ = fs::file_size(io_handle_->filepath());
 }
 
-void SSTable::FinishSegmentCache(vector<shared_ptr<Segment>>& segment_cache) {
-  // Inserting the youngest segments into a sorted set only if they don't exist
-  // inside the set will maintain the most recent items while also sorting those
-  // keys.
-  using SegmentPtr = shared_ptr<Segment>;
-  static auto sptr_compare = [](const SegmentPtr& a,
-                                const SegmentPtr& b) -> bool {
-    return a->key < b->key;
-  };
-  set<SegmentPtr, decltype(sptr_compare)> young_segments(sptr_compare);
-  for (int ii = 0; ii < segment_cache.size(); ++ii) {
-    if (segment_cache[ii] != nullptr) {
-      young_segments.emplace(move(segment_cache[ii]));
-    }
-  }
-  for (auto& s : young_segments) {
-    // Age doesn't matter here since all segments are unique.
-    ResolveWrite(move(*s), 0);
-  }
-}
-
 void SSTable::ResolveWrite(Segment&& segment, const int age) {
   if (merge_buffer_.first.key.empty()) {
-    merge_buffer_.first = move(segment);
+    merge_buffer_.first = segment;
     return;
   }
 
   if (merge_buffer_.first.key != segment.key) {
-    // Segment in the buffer is the youngest write for that key. Persist it.
-    io_handle_->SegmentWrite(merge_buffer_.first);
+    // Since we're trying to resolve a segment that's not what is currencly in the buffer, the
+    // segment that is in the buffer is the most recent write for that key. Persist it.
+    if (!segment.delete_entry) {
+      io_handle_->SegmentWrite(merge_buffer_.first);
+    }
     merge_buffer_.first = move(segment);
     merge_buffer_.second = age;
   } else if (merge_buffer_.first.key == segment.key &&
              age < merge_buffer_.second) {
-    // Replace a stale write with a more recent one.
+    // Segment is the same as what is in the merge buffer and the segment is more recent. We can
+    // replace the segment in the merge buffer with the more recent one.
     merge_buffer_.first = move(segment);
   }
 }

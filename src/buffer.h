@@ -45,6 +45,7 @@ struct Segment {
   }
 
   bool operator>(Segment other) const { return key > other.key; }
+  bool operator<(Segment other) const { return key < other.key; }
 
   uint32_t key_size;
   uint32_t val_size;
