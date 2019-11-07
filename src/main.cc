@@ -3,10 +3,6 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
-#include <grpc/grpc.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
 
 #include "src/server.h"
 
@@ -37,15 +33,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "DiverDB server will listen on " << server_address;
   DiverDBServer diodb_server;
 
-  // Fire up the DiverDB server.
-  LOG(INFO) << "initializing the service";
-  grpc::ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(&diodb_server);
-  unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  server->Wait();
+  LOG(INFO) << "lol, nvmd this is a no-op until RPCs are supported";
 
-  gflags::ShutDownCommandLineFlags();
-  google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }

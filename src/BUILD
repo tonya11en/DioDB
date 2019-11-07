@@ -4,7 +4,6 @@ cc_binary(
   deps = [
     "@glog//:glog",
     "@com_github_gflags_gflags//:gflags",
-    "@com_github_grpc_grpc//:grpc++",
     ":diodb_server_lib",
   ],
   copts = ["-std=c++17"],
@@ -17,8 +16,6 @@ cc_library(
   deps = [
     "@glog//:glog",
     "@com_github_gflags_gflags//:gflags",
-    "//proto:cc_server_grpc",
-    "@com_github_grpc_grpc//:grpc++",
   ],
   copts = ["-std=c++17"],
 )
@@ -49,7 +46,6 @@ cc_library(
   deps = [
     "@glog//:glog",
     "@boost//:filesystem",
-    "@com_google_protobuf//:protobuf",
     ":buffer_lib",
   ],
   copts = ["-std=c++17"],
@@ -80,7 +76,6 @@ cc_library(
     ":memtable_lib",
     "@boost//:filesystem",
     ":iohandle_lib",
-    "@com_google_protobuf//:protobuf",
     ":generic_table_lib",
   ],
   copts = ["-std=c++17"],

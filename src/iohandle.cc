@@ -3,7 +3,6 @@
 #include <memory>
 
 #include <glog/logging.h>
-#include <google/protobuf/util/delimited_message_util.h>
 #include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
 

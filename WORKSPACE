@@ -23,21 +23,6 @@ git_repository(
     tag = "release-1.8.1",
 )
 
-# RPC lib.
-git_repository(
-    name = "com_github_grpc_grpc",
-    remote = "git@github.com:grpc/grpc.git",
-    tag = "v1.20.0",
-)
-git_repository(
-  name = "com_google_protobuf",
-  remote = "https://github.com/google/protobuf.git",
-  tag = "v3.7.1",
-)
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-grpc_deps()
-
 # Boost C++ rules.
 git_repository(
     name = "com_github_nelhage_rules_boost",

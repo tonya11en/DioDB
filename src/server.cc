@@ -7,16 +7,8 @@ using namespace std;
 
 namespace diodb {
 namespace Server {
-Status DiverDBServer::GetDBInfo(ServerContext *context,
-                                const DBInfoRequest *request,
-                                DBInfoReply *reply) {
-  reply->set_db_version(gflags::VersionString());
-  return Status::OK;
-}
 
-Status DiverDBServer::HolyDiver(ServerContext *context,
-                                const HolyDiverRequest *request,
-                                HolyDiverReply *lyrics) {
+void DiverDBServer::HolyDiver() {
   static const string holy_diver =
       "Mmmmhhh mhmm\n"
       "Yeah yeah\n"
@@ -67,8 +59,8 @@ Status DiverDBServer::HolyDiver(ServerContext *context,
       "Oh holy diver, mmm";
 
   LOG(INFO) << "Ride the tiger";
-  lyrics->set_lyrics(holy_diver);
-  return Status::OK;
+
+  // TODO: pack this into a protobuf once RPCs are supported.
 }
 
 }  // namespace Server

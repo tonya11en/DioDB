@@ -23,7 +23,6 @@ cc_test(
   deps = [
     "//test/mocks:sstable_mock_lib",
     "@boost//:filesystem",
-    "@com_google_protobuf//:protobuf",
     "@glog//:glog",
     "@googletest//:gtest_main",
   ],
@@ -37,7 +36,6 @@ cc_test(
     "//src:db_ctl_lib",
     "//test/mocks:sstable_mock_lib",
     "@boost//:filesystem",
-    "@com_google_protobuf//:protobuf",
     "@glog//:glog",
     "@googletest//:gtest_main",
   ],
