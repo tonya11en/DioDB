@@ -16,8 +16,7 @@ Threadpool::Threadpool(const int num_threads)
     auto w = std::make_shared<Worker>();
     w->rage_quit = false;
     workers_.emplace_back(w);
-    workers_[ii]->wthread =
-        std::move(std::thread(&Threadpool::Toil, ii, workers_[ii]));
+    workers_[ii]->wthread = std::thread(&Threadpool::Toil, ii, workers_[ii]);
   }
 }
 

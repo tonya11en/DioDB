@@ -31,7 +31,6 @@ int main(int argc, char *argv[]) {
 
   const string server_address("0.0.0.0:" + FLAGS_server_port);
   LOG(INFO) << "DiverDB server will listen on " << server_address;
-  DiverDBServer diodb_server;
 
   LOG(INFO) << "lol, nvmd this is a no-op until RPCs are supported";
 
